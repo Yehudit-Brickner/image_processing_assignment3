@@ -30,15 +30,51 @@ def opticalFlow(im1: np.ndarray, im2: np.ndarray, step_size=10,
     :return: Original points [[x,y]...], [[dU,dV]...] for each points
     """
     ker = np.array([[1, 0, -1]])
-    Ix=cv2.filter2D(im1, -1, ker, borderType=cv2.BORDER_REPLICATE)
-    Iy=cv2.filter2D(im1, -1, ker.T, borderType=cv2.BORDER_REPLICATE)
+    rep = np.floor(win_size/2)
+    im1pad = cv2.copyMakeBorder(im1, rep, rep, rep, rep, cv2.BORDER_REPLICATE, None, value=0)
+    Ix = cv2.filter2D(im1pad, -1, ker, borderType=cv2.BORDER_REPLICATE)
+    Iy = cv2.filter2D(im1pad, -1, ker.T, borderType=cv2.BORDER_REPLICATE)
 
-    f, ax = plt.subplots(1, 4)
+    f, ax = plt.subplots(1, 5)
     ax[0].imshow(im1)
     ax[1].imshow(Ix)
     ax[2].imshow(Iy)
     ax[3].imshow(im2)
+    ax[4].imshow(im1-im2)
     plt.show()
+
+
+
+
+    pass
+
+
+
+def createPyramids(img:np.ndarray,levels :int):
+    plist=[]
+    k=cv2.getGaussianKernel(5,-1)
+    ker = (k).dot(k.T)
+    imgc=img.copy()
+    for i in range(levels):
+        imgc = cv2.filter2D(imgc,-1,ker,borderType=cv2.BORDER_REPLICATE)
+        newr = np.floor(imgc.shape[0]/2).astype(int)
+        newc = np.floor(imgc.shape[1]/2).astype(int)
+        print((newc, newr))
+        imnew = np.zeros((newr,newc))
+        for j in range(newr):
+            for k in range(newc):
+                imnew[j][k]=imgc[j*2][k*2]
+        plist.append(imnew)
+        imgc = imnew
+
+    f, ax = plt.subplots(1, levels)
+    for i in range(levels) :
+        ax[i].imshow(plist[i])
+    plt.show()
+
+    return plist
+
+
 
     pass
 
