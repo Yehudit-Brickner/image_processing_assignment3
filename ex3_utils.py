@@ -12,7 +12,7 @@ def myID() -> np.int:
     Return my ID (not the friend's ID I copied from)
     :return: int
     """
-    return 100
+    return 328601018
 
 # ---------------------------------------------------------------------------
 # ------------------------ Lucas Kanade optical flow ------------------------
@@ -29,6 +29,17 @@ def opticalFlow(im1: np.ndarray, im2: np.ndarray, step_size=10,
     :param win_size: The optical flow window size (odd number)
     :return: Original points [[x,y]...], [[dU,dV]...] for each points
     """
+    ker = np.array([[1, 0, -1]])
+    Ix=cv2.filter2D(im1, -1, ker, borderType=cv2.BORDER_REPLICATE)
+    Iy=cv2.filter2D(im1, -1, ker.T, borderType=cv2.BORDER_REPLICATE)
+
+    f, ax = plt.subplots(1, 4)
+    ax[0].imshow(im1)
+    ax[1].imshow(Ix)
+    ax[2].imshow(Iy)
+    ax[3].imshow(im2)
+    plt.show()
+
     pass
 
 
