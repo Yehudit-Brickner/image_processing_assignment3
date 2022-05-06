@@ -129,17 +129,17 @@ def blendDemo():
 
     n_blend, im_blend = pyrBlend(im1, im2, mask, 4)
 
-    f, ax = plt.subplots(2, 3)
-    ax[0, 0].imshow(im1)
-    ax[0, 1].imshow(im2)
-    ax[0, 2].imshow(mask)
-    ax[1, 0].imshow(n_blend)
-    ax[1, 1].imshow(np.abs(n_blend - im_blend))
-    ax[1, 2].imshow(im_blend)
-
-    plt.show()
-
-    cv2.imwrite('sunset_cat.png', cv2.cvtColor((im_blend * 255).astype(np.uint8), cv2.COLOR_RGB2BGR))
+    # f, ax = plt.subplots(2, 3)
+    # ax[0, 0].imshow(im1)
+    # ax[0, 1].imshow(im2)
+    # ax[0, 2].imshow(mask)
+    # ax[1, 0].imshow(n_blend)
+    # ax[1, 1].imshow(np.abs(n_blend - im_blend))
+    # ax[1, 2].imshow(im_blend)
+    #
+    # plt.show()
+    #
+    # cv2.imwrite('sunset_cat.png', cv2.cvtColor((im_blend * 255).astype(np.uint8), cv2.COLOR_RGB2BGR))
 
 
 def main():
@@ -154,9 +154,9 @@ def main():
     #
     # pyrGaussianDemo('input/pyr_bit.jpg')
     # pyrLaplacianDemo('input/pyr_bit.jpg')
-    # blendDemo()
-    img = cv2.cvtColor(cv2.imread(img_path), cv2.COLOR_BGR2GRAY)
-    createPyramids(img,5)
+    blendDemo()
+    # img = cv2.cvtColor(cv2.imread(img_path), cv2.COLOR_BGR2GRAY)
+    # createPyramids(img,5)
 
 if __name__ == '__main__':
     main()

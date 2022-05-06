@@ -158,7 +158,55 @@ def gaussianPyr(img: np.ndarray, levels: int = 4) -> List[np.ndarray]:
     :param levels: Pyramid depth
     :return: Gaussian pyramid (list of images)
     """
-    pass
+    # black and white img
+    if(len(img.shape)==2):
+        print("black and white")
+        plist = []
+        k = cv2.getGaussianKernel(5, -1)
+        ker = (k).dot(k.T)
+        imgc = img.copy()
+        for i in range(levels):
+            imgblur = cv2.filter2D(imgc, -1, ker, borderType=cv2.BORDER_REPLICATE)
+            newr = np.ceil(imgblur.shape[0] / 2).astype(int)
+            newc = np.ceil(imgblur.shape[1] / 2).astype(int)
+            print((newc, newr))
+            imnew = np.zeros((newr, newc))
+            for j in range(newr):
+                for k in range(newc):
+                    imnew[j][k] = imgblur[j*2][k*2]
+            plist.append(imnew)
+            imgc = imnew
+
+        f, ax = plt.subplots(1, len(plist))
+        for i in range(len(plist)):
+            ax[i].imshow(plist[i])
+        plt.show()
+        return plist
+
+    # color image
+    else:
+        print("color_img")
+        plist = []
+        k = cv2.getGaussianKernel(5, -1)
+        ker = (k).dot(k.T)
+        imgc = img.copy()
+        for i in range(levels):
+            imgblur = cv2.filter2D(imgc, -1, ker, borderType=cv2.BORDER_REPLICATE)
+            newr = np.ceil(imgblur.shape[0] / 2).astype(int)
+            newc = np.ceil(imgblur.shape[1] / 2).astype(int)
+            print((newc, newr))
+            imnew = np.zeros((newr, newc,3))
+            for l in range(3):
+                for j in range(newr):
+                    for k in range(newc):
+                        imnew[j][k][l] = imgblur[j*2][k*2][l]
+            plist.append(imnew)
+            imgc = imnew
+        f, ax = plt.subplots(1, len(plist))
+        for i in range(len(plist)):
+            ax[i].imshow(plist[i])
+        plt.show()
+        return plist
 
 
 def laplaceianReduce(img: np.ndarray, levels: int = 4) -> List[np.ndarray]:
@@ -168,7 +216,64 @@ def laplaceianReduce(img: np.ndarray, levels: int = 4) -> List[np.ndarray]:
     :param levels: Pyramid depth
     :return: Laplacian Pyramid (list of images)
     """
-    pass
+    # black and white image
+    if(len(img.shape)==2):
+        print("black and white")
+        plist = []
+        k = cv2.getGaussianKernel(5, -1)
+        ker = (k).dot(k.T)
+        imgc = img.copy()
+        for i in range(levels):
+            imgblur = cv2.filter2D(imgc, -1, ker, borderType=cv2.BORDER_REPLICATE)
+            lapimg=imgc-imgblur
+            plist.append(lapimg)
+            newr = np.ceil(imgc.shape[0] / 2).astype(int)
+            newc = np.ceil(imgc.shape[1] / 2).astype(int)
+            print((newc, newr))
+            imnew = np.zeros((newr, newc))
+            for j in range(newr):
+                for k in range(newc):
+                    imnew[j][k] = imgc[j * 2][k * 2]
+            if i==levels-1:
+                plist.append(imgc)
+            imgc = imnew
+
+        f, ax = plt.subplots(1, len(plist))
+        for i in range(len(plist)):
+            ax[i].imshow(plist[i])
+        plt.show()
+        return plist
+
+
+    # color image
+    else:
+        print("color_img")
+
+        plist = []
+        k = cv2.getGaussianKernel(5, -1)
+        ker = (k).dot(k.T)
+        imgc = img.copy()
+        for i in range(levels):
+            imgblur = cv2.filter2D(imgc, -1, ker, borderType=cv2.BORDER_REPLICATE)
+            imglap=(imgc-imgblur)
+            plist.append(imglap)
+            newr = np.ceil(imgblur.shape[0] / 2).astype(int)
+            newc = np.ceil(imgblur.shape[1] / 2).astype(int)
+            # print((newc, newr))
+            imnew = np.zeros((newr, newc, 3))
+            for l in range(3):
+                for j in range(newr):
+                    for k in range(newc):
+                        imnew[j][k][l] = imgblur[j * 2][k * 2][l]
+            if i==levels-1:
+                plist.append(imgc)
+            imgc = imnew
+        f, ax = plt.subplots(1, len(plist))
+        for i in range(len(plist)):
+            ax[i].imshow(plist[i])
+        plt.show()
+        return plist
+
 
 
 def laplaceianExpand(lap_pyr: List[np.ndarray]) -> np.ndarray:
@@ -177,7 +282,59 @@ def laplaceianExpand(lap_pyr: List[np.ndarray]) -> np.ndarray:
     :param lap_pyr: Laplacian Pyramid
     :return: Original image
     """
-    pass
+    if (len(lap_pyr[-1].shape) == 2):
+        print("black and white")
+        plist = []
+        k = cv2.getGaussianKernel(5, -1)
+        ker = (k).dot(k.T)
+        ker=ker*4
+        imgn=lap_pyr[-1]
+        for i in range(len(lap_pyr)-2,0,-1):
+            print(i)
+            imgn=imgn+lap_pyr[i]
+            newr = (imgn.shape[0]*2)
+            newc = (imgn.shape[1]*2)
+            print(newr, newc)
+            newimg=np.zeros((newr,newc))
+            for j in range(imgn.shape[0]):
+                for k in range(imgn.shape[1]):
+                    newimg[j*2][k*2]=imgn[j][k]
+            imgn= cv2.filter2D(newimg, -1, ker, borderType=cv2.BORDER_REPLICATE)
+            plt.imshow(imgn)
+            plt.show()
+        imgn=imgn+lap_pyr[0]
+        plt.imshow(imgn)
+        plt.show()
+        return imgn
+
+    else:
+        print("color img")
+        plist = []
+        k = cv2.getGaussianKernel(5, -1)
+        ker = (k).dot(k.T)
+        ker = ker * 4
+        imgn = lap_pyr[-1]
+        for i in range(len(lap_pyr) - 2, 0, -1):
+            print(i, imgn.shape, lap_pyr[i].shape)
+            imgn = imgn + lap_pyr[i]
+            newr = (imgn.shape[0] * 2)
+            newc = (imgn.shape[1] * 2)
+            print(newr, newc)
+            newimg = np.zeros((newr, newc,3))
+            for l in range(3):
+                for j in range(imgn.shape[0]):
+                    for k in range(imgn.shape[1]):
+                        newimg[j * 2][k * 2][l] = imgn[j][k][l]
+            imgn = cv2.filter2D(newimg, -1, ker, borderType=cv2.BORDER_REPLICATE)
+            plt.show(imgn)
+            plt.show()
+        imgn = imgn + lap_pyr[0]
+        plt.imshow(imgn)
+        plt.show()
+        return imgn
+
+
+
 
 
 def pyrBlend(img_1: np.ndarray, img_2: np.ndarray,
@@ -190,5 +347,25 @@ def pyrBlend(img_1: np.ndarray, img_2: np.ndarray,
     :param levels: Pyramid depth
     :return: (Naive blend, Blended Image)
     """
+    l1=laplaceianReduce(img_1,levels)
+    l2=laplaceianReduce(img_2,levels)
+    l3=laplaceianReduce(mask,levels)
+    l4=[]
+    for i in range(levels+1):
+        l4.append(l3[i]*l1[i]+(1-l3[i])*l2[i])
+        print(l1[i].shape, l2[i].shape, l3[i].shape, l4[i].shape)
+
+    # f, ax = plt.subplots(1, 4)
+    # for i in range(levels+1):
+    #     plt.imshow(l4[i])
+    #     plt.show()
+        # ax[0].imshow(l4[i])
+        # ax[1].imshow(l2[i])
+        # ax[2].imshow(l3[i])
+        # ax[3].imshow(l4[i])
+        # plt.show()
+    blended1=laplaceianExpand(l4)
+    plt.imshow(blended1)
+    plt.show()
     pass
 
