@@ -146,7 +146,7 @@ def main():
     print("ID:", myID())
 
     img_path = 'input/boxMan.jpg'
-    # lkDemo(img_path)
+    lkDemo(img_path)
     # hierarchicalkDemo(img_path)
     # compareLK(img_path)
     #
@@ -154,7 +154,7 @@ def main():
     #
     # pyrGaussianDemo('input/pyr_bit.jpg')
     # pyrLaplacianDemo('input/pyr_bit.jpg')
-    blendDemo()
+    # blendDemo()
     # img = cv2.cvtColor(cv2.imread(img_path), cv2.COLOR_BGR2GRAY)
     # createPyramids(img,5)
 

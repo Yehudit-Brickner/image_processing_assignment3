@@ -29,24 +29,77 @@ def opticalFlow(im1: np.ndarray, im2: np.ndarray, step_size=10,
     :param win_size: The optical flow window size (odd number)
     :return: Original points [[x,y]...], [[dU,dV]...] for each points
     """
+    eps=0.05
     ker = np.array([[1, 0, -1]])
-    rep = np.floor(win_size/2)
-    im1pad = cv2.copyMakeBorder(im1, rep, rep, rep, rep, cv2.BORDER_REPLICATE, None, value=0)
-    Ix = cv2.filter2D(im1pad, -1, ker, borderType=cv2.BORDER_REPLICATE)
-    Iy = cv2.filter2D(im1pad, -1, ker.T, borderType=cv2.BORDER_REPLICATE)
+    rep = int(np.floor(win_size/2))
+    # print(rep)
+    im2pad = cv2.copyMakeBorder(im2, rep, rep, rep, rep, cv2.BORDER_REPLICATE, None, value=0)
+    Ix = cv2.filter2D(im2pad, -1, ker, borderType=cv2.BORDER_REPLICATE)
+    Iy = cv2.filter2D(im2pad, -1, ker.T, borderType=cv2.BORDER_REPLICATE)
+    It=im2-im1
 
-    f, ax = plt.subplots(1, 5)
-    ax[0].imshow(im1)
-    ax[1].imshow(Ix)
-    ax[2].imshow(Iy)
-    ax[3].imshow(im2)
-    ax[4].imshow(im1-im2)
-    plt.show()
+    # f, ax = plt.subplots(1, 5)
+    # ax[0].imshow(im1)
+    # ax[1].imshow(Ix)
+    # ax[2].imshow(Iy)
+    # ax[3].imshow(im2)
+    # ax[4].imshow(It)
+    # plt.show()
+    # print(im2.shape)
+    origpoints = np.array([])
+    newpoints = np.array([])
+    for i in range( 3,im2.shape[0]-3,step_size):
+        for j in range(3,im2.shape[1]-3,step_size):
+            print("i j ", i ,j)
+            try:
+                A = np.array([])
+                B = np.array([])
+                for k in range(i-2,i+3):
+                    for l in range(j-2,j+3):
+                       A = np.append(A,Ix[k,l])
+                       A = np.append(A,Iy[k, l])
+                       B = np.append(B, -It[k, l])
+                B = B.reshape(25,1)
+                A = A.reshape(25,2)
+                AT = A.T
+                ATA=AT@A
+                e, e1=np.linalg.eig(ATA)
+                e=np.sort(e)
 
+                if e[1]>=e[0]>1 and e[1]/e[0]<100:
+                    # print(i, j)
+                    # print("eigen values ", e)
+                    v = np.linalg.inv(ATA) @ AT @ B
 
+                    if(v[0]!=0 and v[1]!=0):
+                        # print(v)
+                        # print("we arent zero")
+                        for k in range(i - 2, i + 3):
+                            for l in range(j - 2, j + 3):
+                                du=int(k+v[0])
+                                dv=int(l+v[1])
+                                if(du>=0 and du<im1.shape[0] and dv>=0 and dv<im1.shape[1]):
+                                    # print([du,dv], [k,l])
+                                    o = [k, l]
+                                    n = [du, dv]
+                                    add=1
+                                    for m in range(-1,-50,-2):
+                                       if len(newpoints)>-(m-1):
+                                            if(newpoints[m]==du and newpoints[m-1]==dv):
+                                                add=0
+                                                print(du,dv)
+                                    if add==1:
+                                        newpoints = np.append(newpoints,n)
+                                        origpoints = np.append(origpoints,o)
+                                    # print([int(du),int(dv)])
+            except:
+                print("caught exceptain")
+    origpoints = origpoints.reshape(int(origpoints.shape[0] / 2),2)
+    newpoints = newpoints.reshape(int(newpoints.shape[0] / 2), 2)
 
-
-    pass
+    print("origpoints" , origpoints[0],origpoints[1])
+    print("newpoints",newpoints[0],newpoints[0])
+    return origpoints,newpoints
 
 
 
