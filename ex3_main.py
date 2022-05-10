@@ -91,10 +91,10 @@ def pyrGaussianDemo(img_path):
     widths = np.hstack([0, widths])
     canv_w = widths[-1]
     canvas = np.zeros((canv_h, canv_w, 3))
-
     for lv_idx in range(lvls):
         h = gau_pyr[lv_idx].shape[0]
         canvas[:h, widths[lv_idx]:widths[lv_idx + 1], :] = gau_pyr[lv_idx]
+
 
     plt.imshow(canvas)
     plt.show()
@@ -104,7 +104,7 @@ def pyrLaplacianDemo(img_path):
     print("Laplacian Pyramid Demo")
 
     img = cv2.cvtColor(cv2.imread(img_path), cv2.COLOR_BGR2GRAY) / 255
-    img = cv2.cvtColor(cv2.imread(img_path), cv2.COLOR_BGR2RGB) / 255
+    # img = cv2.cvtColor(cv2.imread(img_path), cv2.COLOR_BGR2RGB) / 255
     lvls = 7
 
     lap_pyr = laplaceianReduce(img, lvls)
@@ -152,8 +152,8 @@ def main():
     #
     # imageWarpingDemo(img_path)
     #
-    # pyrGaussianDemo('input/pyr_bit.jpg')
-    # pyrLaplacianDemo('input/pyr_bit.jpg')
+    pyrGaussianDemo('input/pyr_bit.jpg')
+    pyrLaplacianDemo('input/pyr_bit.jpg')
     blendDemo()
     # img = cv2.cvtColor(cv2.imread(img_path), cv2.COLOR_BGR2GRAY)
     # createPyramids(img,5)
