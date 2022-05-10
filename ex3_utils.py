@@ -29,14 +29,17 @@ def opticalFlow(im1: np.ndarray, im2: np.ndarray, step_size=10,
     :param win_size: The optical flow window size (odd number)
     :return: Original points [[x,y]...], [[dU,dV]...] for each points
     """
-    eps=0.05
+
     ker = np.array([[1, 0, -1]])
     rep = int(np.floor(win_size/2))
-    # print(rep)
+
 
     im2pad = cv2.copyMakeBorder(im2, rep, rep, rep, rep, cv2.BORDER_REPLICATE, None, value=0)
     Ix = cv2.filter2D(im2pad, -1, ker, borderType=cv2.BORDER_REPLICATE)
     Iy = cv2.filter2D(im2pad, -1, ker.T, borderType=cv2.BORDER_REPLICATE)
+    # Ix = cv2.Sobel(im2, cv2.CV_16S, 1, 0, ksize=3, borderType=cv2.BORDER_DEFAULT)
+    # Iy = cv2.Sobel(im2, cv2.CV_16S, 0, 1, ksize=3, borderType=cv2.BORDER_DEFAULT)
+
     It=im2-im1
 
     # Ixpad=cv2.copyMakeBorder(Ix, rep, rep, rep, rep, cv2.BORDER_REPLICATE, None, value=0)
@@ -54,28 +57,29 @@ def opticalFlow(im1: np.ndarray, im2: np.ndarray, step_size=10,
     z=0
     origpoints = np.array([])
     newpoints = np.array([])
-    start= int(np.floor(win_size/2))
-    for i in range(start,im2.shape[0],step_size):
-        for j in range(start, im2.shape[1],step_size):
+    # start= int(np.floor(win_size/2))
+    start=win_size
+    for i in range(step_size,im2.shape[0],step_size):
+        for j in range(step_size, im2.shape[1],step_size):
             try:
-                small=[]
-                # template match the best win_size*win_size square in the area step_size*step_size
-                for x in range(i,i+step_size):
-                    for y in range(j,j+step_size):
-                        if(x-rep>=0 and x+rep+1<im2.shape[0] and y-rep>=0 and y+rep+1<im2.shape[1]):
-                            # sq=((It[x-rep:x+rep+1, y-rep:y+rep+1])).sum()
-                            i1=im1[x-rep:x+rep+1, y-rep:y+rep+1]
-                            i1a=i1.reshape(1,25)
-                            i1b=i1.reshape(25,1)
-                            i2=im2[x-rep:x+rep+1, y-rep:y+rep+1]
-                            i2a = i2.reshape(1, 25)
-                            i2b = i2.reshape(25, 1)
-                            ncc=float(i1a.dot(i2b)/(i1a.dot(i1b))*(i2a.dot(i2b)))
-                            if len(small)==0:
-                                small.append((ncc,x,y))
-                            else:
-                                if small[0][0]<ncc:
-                                    small[0]=(ncc,x,y)
+                # small=[]
+                # # template match the best win_size*win_size square in the area step_size*step_size
+                # for x in range(i-start,i+step_size-start):
+                #     for y in range(j-start,j+step_size-start):
+                #         if(x-rep>=0 and x+rep+1<im2.shape[0] and y-rep>=0 and y+rep+1<im2.shape[1]):
+                #             # sq=((It[x-rep:x+rep+1, y-rep:y+rep+1])).sum()
+                #             i1=im1[x-rep:x+rep+1, y-rep:y+rep+1]
+                #             i1a=i1.reshape(1,25)
+                #             i1b=i1.reshape(25,1)
+                #             i2=im2[x-rep:x+rep+1, y-rep:y+rep+1]
+                #             i2a = i2.reshape(1, 25)
+                #             i2b = i2.reshape(25, 1)
+                #             ncc=float(i1a.dot(i2b)/(i1a.dot(i1b))*(i2a.dot(i2b)))
+                #             if len(small) == 0:
+                #                 small.append((ncc, x, y))
+                #             else:
+                #                 if small[0][0]<ncc:
+                #                     small[0]=(ncc, x, y)
                 # print(small)
 
                 # find the u and v for the best matched area
@@ -83,13 +87,13 @@ def opticalFlow(im1: np.ndarray, im2: np.ndarray, step_size=10,
                 # B = np.array([])
 
 
-                # B = -It[i-rep : i+rep+1, j-rep : j+rep+1]
-                B = -It[small[0][1]-rep : small[0][1]+rep+1, small[0][2]-rep :small[0][2]+rep+1]
+                B = -It[i-rep : i+rep+1, j-rep : j+rep+1]
+                # B = -It[small[0][1]-rep : small[0][1]+rep+1, small[0][2]-rep :small[0][2]+rep+1]
                 B = B.reshape(25, 1)
-                # A1 = Ix[i-rep : i+rep+1, j-rep : j+rep+1].reshape(25,1)
-                # A2 = Iy[i-rep : i+rep+1, j-rep : j+rep+1].reshape(25,1)
-                A1 = Ix[small[0][1]-rep : small[0][1]+rep+1, small[0][2]-rep : small[0][2]+rep+1].reshape(25,1)
-                A2 = Iy[small[0][1]-rep : small[0][1]+rep+1, small[0][2]-rep : small[0][2]+rep+1].reshape(25,1)
+                A1 = Ix[i-rep : i+rep+1, j-rep : j+rep+1].reshape(25,1)
+                A2 = Iy[i-rep : i+rep+1, j-rep : j+rep+1].reshape(25,1)
+                # A1 = Ix[small[0][1]-rep : small[0][1]+rep+1, small[0][2]-rep : small[0][2]+rep+1].reshape(25,1)
+                # A2 = Iy[small[0][1]-rep : small[0][1]+rep+1, small[0][2]-rep : small[0][2]+rep+1].reshape(25,1)
                 A = np.stack((A1,A2))
                 A = A.reshape(25,2)
                 AT = A.T
@@ -99,36 +103,28 @@ def opticalFlow(im1: np.ndarray, im2: np.ndarray, step_size=10,
                 # make sure the eigen values are ok
                 if e[1] >= e[0] > 1 and e[1]/e[0] < 100:
                     v = np.linalg.inv(ATA) @ AT @ B
-                    if(v[0] != 0 and v[1] != 0):
+                    # if(v[0] != 0 and v[1] != 0):
                     # find the value after the transformation
-                        du=float(small[0][1]*v[0])
-                        dv=float(small[0][2]*v[1])
-                        o = [small[0][2], small[0][1]]
-                        n = [dv, du]
-                    #     du= int(i * v[0])
-                    #     dv = int(j * v[1])
-                    #     n = [dv, du]
-                    #     o=[j,i]
-                        origpoints = np.append(origpoints, o)
-                        newpoints = np.append(newpoints,n)
-                    # if(v[0]!=0 and v[1]!=0):
-                    # for k in range(small[0][1] - rep, small[0][1] + rep+1):
-                    #     for l in range(small[0][2]-rep, small[0][2]+rep+1):
-                    #         du=(k*v[0])
-                    #         dv=(l*v[1])
-                    #         if(du>=0 and du<im2.shape[0] and dv>=0 and dv<im2.shape[1]):
-                    #             # print([du,dv], [k,l])
-                    #             o = [l, k]
-                    #             n = [dv, du]
-                    #             # add=1
-                    #             # for m in range(-1,-50,-2):
-                    #             #    if len(newpoints)>-(m-1):
-                    #             #         if(newpoints[m]==dv and newpoints[m-1]==du):
-                    #             #             add=0
-                    #             #             print(du,dv)
-                    #             # if add==1:
-                    #             origpoints = np.append(origpoints,o)
-                    #             newpoints = np.append(newpoints,n)
+                    # du=float(small[0][1]*v[0])
+                    # dv=float(small[0][2]*v[1])
+                    # if(du>=0 and du<im2.shape[0] and dv>=0 and dv<im2.shape[1]):
+                    # o = [small[0][2], small[0][1]]
+                    # n = [dv, du]
+                    du= int(i * v[0])
+                    dv = int(j * v[1])
+                    # du = int(i * v[1])
+                    # dv = int(j * v[0])
+                    n = [dv, du]
+                    o=[j,i]
+                    # add=0
+                    # if(n[0]>=0 or n[1]>=0 or n[0]<im2.shape[1] or n[1]<im2.shape[0]):
+                    #     add=1
+                    # # if abs(dv - small[0][2]) > 625 and abs(du - small[0][1]) > 625:
+                    # #     print("o =", o, "n=", n)
+                    # #     add=0
+                    # if add==1:
+                    origpoints = np.append(origpoints, o)
+                    newpoints = np.append(newpoints,n)
 
 
             except:
@@ -141,7 +137,7 @@ def opticalFlow(im1: np.ndarray, im2: np.ndarray, step_size=10,
     print("origpoints" , origpoints[0],origpoints[1])
     print("newpoints",newpoints[0],newpoints[0])
     print("caught  %d exceptions" %(z))
-    return origpoints,newpoints
+    return origpoints , newpoints
 
 
 
@@ -169,9 +165,6 @@ def createPyramids(img:np.ndarray,levels :int):
 
     return plist
 
-
-
-    pass
 
 
 def opticalFlowPyrLK(img1: np.ndarray, img2: np.ndarray, k: int,
@@ -387,8 +380,14 @@ def laplaceianExpand(lap_pyr: List[np.ndarray]) -> np.ndarray:
         for i in range(len(lap_pyr)-2,0,-1):
             print(i)
             imgn=imgn+lap_pyr[i]
-            newr = (imgn.shape[0]*2)
-            newc = (imgn.shape[1]*2)
+            # newr = (imgn.shape[0]*2)
+            # newc = (imgn.shape[1]*2)
+            # x=newr-lap_pyr[i].shape[0]
+            # newr=newr+x
+            # y=newc-lap_pyr[i].shape[1]
+            # newc=newc+y
+            newr = lap_pyr[i - 1].shape[0]
+            newc = lap_pyr[i - 1].shape[1]
             print(newr, newc)
             newimg=np.zeros((newr,newc))
             for j in range(imgn.shape[0]):
@@ -412,8 +411,14 @@ def laplaceianExpand(lap_pyr: List[np.ndarray]) -> np.ndarray:
         for i in range(len(lap_pyr) - 2, 0, -1):
             print(i, imgn.shape, lap_pyr[i].shape)
             imgn = imgn + lap_pyr[i]
-            newr = (imgn.shape[0] * 2)
-            newc = (imgn.shape[1] * 2)
+            # newr = (imgn.shape[0] * 2)
+            # newc = (imgn.shape[1] * 2)
+            # x = newr - lap_pyr[i-1].shape[0]
+            # newr = newr + x
+            # y = newc - lap_pyr[i-1].shape[1]
+            # newc = newc + y
+            newr=lap_pyr[i-1].shape[0]
+            newc = lap_pyr[i - 1].shape[1]
             print(newr, newc)
             newimg = np.zeros((newr, newc,3))
             for l in range(3):
@@ -421,11 +426,16 @@ def laplaceianExpand(lap_pyr: List[np.ndarray]) -> np.ndarray:
                     for k in range(imgn.shape[1]):
                         newimg[j * 2][k * 2][l] = imgn[j][k][l]
             imgn = cv2.filter2D(newimg, -1, ker, borderType=cv2.BORDER_REPLICATE)
-            plt.show(imgn)
+            f, ax = plt.subplots(1, 3)
+            ax[0].imshow(imgn)
+            ax[1].imshow(lap_pyr[i])
+            ax[2].imshow(lap_pyr[i-1])
             plt.show()
         imgn = imgn + lap_pyr[0]
         plt.imshow(imgn)
         plt.show()
+
+
         return imgn
 
 
@@ -448,7 +458,9 @@ def pyrBlend(img_1: np.ndarray, img_2: np.ndarray,
     l4=[]
     for i in range(levels+1):
         l4.append(l3[i]*l1[i]+(1-l3[i])*l2[i])
-        print(l1[i].shape, l2[i].shape, l3[i].shape, l4[i].shape)
+        plt.imshow(l4[-1])
+        plt.show
+        # print(l1[i].shape, l2[i].shape, l3[i].shape, l4[i].shape)
 
     # f, ax = plt.subplots(1, 4)
     # for i in range(levels+1):
@@ -462,5 +474,5 @@ def pyrBlend(img_1: np.ndarray, img_2: np.ndarray,
     blended1=laplaceianExpand(l4)
     plt.imshow(blended1)
     plt.show()
-    pass
+    return blended1, blended1
 
