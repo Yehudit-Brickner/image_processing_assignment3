@@ -33,11 +33,15 @@ def opticalFlow(im1: np.ndarray, im2: np.ndarray, step_size=10,
     ker = np.array([[1, 0, -1]])
     rep = int(np.floor(win_size/2))
     # print(rep)
+
     im2pad = cv2.copyMakeBorder(im2, rep, rep, rep, rep, cv2.BORDER_REPLICATE, None, value=0)
     Ix = cv2.filter2D(im2pad, -1, ker, borderType=cv2.BORDER_REPLICATE)
     Iy = cv2.filter2D(im2pad, -1, ker.T, borderType=cv2.BORDER_REPLICATE)
     It=im2-im1
 
+    # Ixpad=cv2.copyMakeBorder(Ix, rep, rep, rep, rep, cv2.BORDER_REPLICATE, None, value=0)
+    # Iypad = cv2.copyMakeBorder(Iy, rep, rep, rep, rep, cv2.BORDER_REPLICATE, None, value=0)
+    # Itpad = cv2.copyMakeBorder(It, rep, rep, rep, rep, cv2.BORDER_REPLICATE, None, value=0)
     # f, ax = plt.subplots(1, 5)
     # ax[0].imshow(im1)
     # ax[1].imshow(Ix)
@@ -45,60 +49,98 @@ def opticalFlow(im1: np.ndarray, im2: np.ndarray, step_size=10,
     # ax[3].imshow(im2)
     # ax[4].imshow(It)
     # plt.show()
-    # print(im2.shape)
+
+
+    z=0
     origpoints = np.array([])
     newpoints = np.array([])
-    for i in range( 3,im2.shape[0]-3,step_size):
-        for j in range(3,im2.shape[1]-3,step_size):
-            print("i j ", i ,j)
+    start= int(np.floor(win_size/2))
+    for i in range(start,im2.shape[0],step_size):
+        for j in range(start, im2.shape[1],step_size):
             try:
-                A = np.array([])
-                B = np.array([])
-                for k in range(i-2,i+3):
-                    for l in range(j-2,j+3):
-                       A = np.append(A,Ix[k,l])
-                       A = np.append(A,Iy[k, l])
-                       B = np.append(B, -It[k, l])
-                B = B.reshape(25,1)
+                small=[]
+                # template match the best win_size*win_size square in the area step_size*step_size
+                for x in range(i,i+step_size):
+                    for y in range(j,j+step_size):
+                        if(x-rep>=0 and x+rep+1<im2.shape[0] and y-rep>=0 and y+rep+1<im2.shape[1]):
+                            # sq=((It[x-rep:x+rep+1, y-rep:y+rep+1])).sum()
+                            i1=im1[x-rep:x+rep+1, y-rep:y+rep+1]
+                            i1a=i1.reshape(1,25)
+                            i1b=i1.reshape(25,1)
+                            i2=im2[x-rep:x+rep+1, y-rep:y+rep+1]
+                            i2a = i2.reshape(1, 25)
+                            i2b = i2.reshape(25, 1)
+                            ncc=float(i1a.dot(i2b)/(i1a.dot(i1b))*(i2a.dot(i2b)))
+                            if len(small)==0:
+                                small.append((ncc,x,y))
+                            else:
+                                if small[0][0]<ncc:
+                                    small[0]=(ncc,x,y)
+                # print(small)
+
+                # find the u and v for the best matched area
+                # A = np.array([])
+                # B = np.array([])
+
+
+                # B = -It[i-rep : i+rep+1, j-rep : j+rep+1]
+                B = -It[small[0][1]-rep : small[0][1]+rep+1, small[0][2]-rep :small[0][2]+rep+1]
+                B = B.reshape(25, 1)
+                # A1 = Ix[i-rep : i+rep+1, j-rep : j+rep+1].reshape(25,1)
+                # A2 = Iy[i-rep : i+rep+1, j-rep : j+rep+1].reshape(25,1)
+                A1 = Ix[small[0][1]-rep : small[0][1]+rep+1, small[0][2]-rep : small[0][2]+rep+1].reshape(25,1)
+                A2 = Iy[small[0][1]-rep : small[0][1]+rep+1, small[0][2]-rep : small[0][2]+rep+1].reshape(25,1)
+                A = np.stack((A1,A2))
                 A = A.reshape(25,2)
                 AT = A.T
-                ATA=AT@A
-                e, e1=np.linalg.eig(ATA)
-                e=np.sort(e)
-
-                if e[1]>=e[0]>1 and e[1]/e[0]<100:
-                    # print(i, j)
-                    # print("eigen values ", e)
+                ATA = AT@A
+                e, e1 = np.linalg.eig(ATA)
+                e = np.sort(e)
+                # make sure the eigen values are ok
+                if e[1] >= e[0] > 1 and e[1]/e[0] < 100:
                     v = np.linalg.inv(ATA) @ AT @ B
+                    if(v[0] != 0 and v[1] != 0):
+                    # find the value after the transformation
+                        du=float(small[0][1]*v[0])
+                        dv=float(small[0][2]*v[1])
+                        o = [small[0][2], small[0][1]]
+                        n = [dv, du]
+                    #     du= int(i * v[0])
+                    #     dv = int(j * v[1])
+                    #     n = [dv, du]
+                    #     o=[j,i]
+                        origpoints = np.append(origpoints, o)
+                        newpoints = np.append(newpoints,n)
+                    # if(v[0]!=0 and v[1]!=0):
+                    # for k in range(small[0][1] - rep, small[0][1] + rep+1):
+                    #     for l in range(small[0][2]-rep, small[0][2]+rep+1):
+                    #         du=(k*v[0])
+                    #         dv=(l*v[1])
+                    #         if(du>=0 and du<im2.shape[0] and dv>=0 and dv<im2.shape[1]):
+                    #             # print([du,dv], [k,l])
+                    #             o = [l, k]
+                    #             n = [dv, du]
+                    #             # add=1
+                    #             # for m in range(-1,-50,-2):
+                    #             #    if len(newpoints)>-(m-1):
+                    #             #         if(newpoints[m]==dv and newpoints[m-1]==du):
+                    #             #             add=0
+                    #             #             print(du,dv)
+                    #             # if add==1:
+                    #             origpoints = np.append(origpoints,o)
+                    #             newpoints = np.append(newpoints,n)
 
-                    if(v[0]!=0 and v[1]!=0):
-                        # print(v)
-                        # print("we arent zero")
-                        for k in range(i - 2, i + 3):
-                            for l in range(j - 2, j + 3):
-                                du=int(k+v[0])
-                                dv=int(l+v[1])
-                                if(du>=0 and du<im1.shape[0] and dv>=0 and dv<im1.shape[1]):
-                                    # print([du,dv], [k,l])
-                                    o = [k, l]
-                                    n = [du, dv]
-                                    add=1
-                                    for m in range(-1,-50,-2):
-                                       if len(newpoints)>-(m-1):
-                                            if(newpoints[m]==du and newpoints[m-1]==dv):
-                                                add=0
-                                                print(du,dv)
-                                    if add==1:
-                                        newpoints = np.append(newpoints,n)
-                                        origpoints = np.append(origpoints,o)
-                                    # print([int(du),int(dv)])
+
             except:
-                print("caught exceptain")
+                z=z+1
+                # print("caught exceptain")
+
     origpoints = origpoints.reshape(int(origpoints.shape[0] / 2),2)
     newpoints = newpoints.reshape(int(newpoints.shape[0] / 2), 2)
 
     print("origpoints" , origpoints[0],origpoints[1])
     print("newpoints",newpoints[0],newpoints[0])
+    print("caught  %d exceptions" %(z))
     return origpoints,newpoints
 
 
