@@ -104,7 +104,7 @@ def pyrLaplacianDemo(img_path):
     print("Laplacian Pyramid Demo")
 
     img = cv2.cvtColor(cv2.imread(img_path), cv2.COLOR_BGR2GRAY) / 255
-    # img = cv2.cvtColor(cv2.imread(img_path), cv2.COLOR_BGR2RGB) / 255
+    img = cv2.cvtColor(cv2.imread(img_path), cv2.COLOR_BGR2RGB) / 255
     lvls = 7
 
     lap_pyr = laplaceianReduce(img, lvls)
@@ -129,16 +129,16 @@ def blendDemo():
 
     n_blend, im_blend = pyrBlend(im1, im2, mask, 4)
 
-    # f, ax = plt.subplots(2, 3)
-    # ax[0, 0].imshow(im1)
-    # ax[0, 1].imshow(im2)
-    # ax[0, 2].imshow(mask)
-    # ax[1, 0].imshow(n_blend)
-    # ax[1, 1].imshow(np.abs(n_blend - im_blend))
-    # ax[1, 2].imshow(im_blend)
-    #
-    # plt.show()
-    #
+    f, ax = plt.subplots(2, 3)
+    ax[0, 0].imshow(im1)
+    ax[0, 1].imshow(im2)
+    ax[0, 2].imshow(mask)
+    ax[1, 0].imshow(n_blend)
+    ax[1, 1].imshow(np.abs(n_blend - im_blend))
+    ax[1, 2].imshow(im_blend)
+
+    plt.show()
+
     # cv2.imwrite('sunset_cat.png', cv2.cvtColor((im_blend * 255).astype(np.uint8), cv2.COLOR_RGB2BGR))
 
 
