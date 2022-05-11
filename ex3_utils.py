@@ -43,9 +43,9 @@ def opticalFlow(im1: np.ndarray, im2: np.ndarray, step_size=10,
     rep = int(np.floor(win_size/2))
 
 
-    im2pad = cv2.copyMakeBorder(im2, rep, rep, rep, rep, cv2.BORDER_REPLICATE, None, value=0)
-    Ix = cv2.filter2D(im2pad, -1, ker, borderType=cv2.BORDER_REPLICATE)
-    Iy = cv2.filter2D(im2pad, -1, ker.T, borderType=cv2.BORDER_REPLICATE)
+    # im2pad = cv2.copyMakeBorder(im2, rep, rep, rep, rep, cv2.BORDER_REPLICATE, None, value=0)
+    Ix = cv2.filter2D(im2, -1, ker, borderType=cv2.BORDER_REPLICATE)
+    Iy = cv2.filter2D(im2, -1, ker.T, borderType=cv2.BORDER_REPLICATE)
     # Ix = cv2.Sobel(im2, cv2.CV_16S, 1, 0, ksize=3, borderType=cv2.BORDER_DEFAULT)
     # Iy = cv2.Sobel(im2, cv2.CV_16S, 0, 1, ksize=3, borderType=cv2.BORDER_DEFAULT)
 
@@ -66,10 +66,10 @@ def opticalFlow(im1: np.ndarray, im2: np.ndarray, step_size=10,
     z=0
     origpoints = np.array([])
     newpoints = np.array([])
-    # start= int(np.floor(win_size/2))
-    start=win_size
-    for i in range(step_size,im2.shape[0],step_size):
-        for j in range(step_size, im2.shape[1],step_size):
+    start= int(np.floor(win_size/2))
+    # start=win_size
+    for i in range(start,im1.shape[0]-start, step_size):
+        for j in range(start, im1.shape[1]-start,step_size):
             try:
                 # small=[]
                 # # template match the best win_size*win_size square in the area step_size*step_size
@@ -99,19 +99,32 @@ def opticalFlow(im1: np.ndarray, im2: np.ndarray, step_size=10,
                 B = -It[i-rep : i+rep+1, j-rep : j+rep+1]
                 # B = -It[small[0][1]-rep : small[0][1]+rep+1, small[0][2]-rep :small[0][2]+rep+1]
                 B = B.reshape(25, 1)
-                A1 = Ix[i-rep : i+rep+1, j-rep : j+rep+1].reshape(25,1)
-                A2 = Iy[i-rep : i+rep+1, j-rep : j+rep+1].reshape(25,1)
+                A1 = Ix[i-rep : i+rep+1, j-rep : j+rep+1].flatten()
+                A2 = Iy[i-rep : i+rep+1, j-rep : j+rep+1].flatten()
                 # A1 = Ix[small[0][1]-rep : small[0][1]+rep+1, small[0][2]-rep : small[0][2]+rep+1].reshape(25,1)
                 # A2 = Iy[small[0][1]-rep : small[0][1]+rep+1, small[0][2]-rep : small[0][2]+rep+1].reshape(25,1)
-                A = np.stack((A1,A2))
+                # A = np.stack((A1,A2))
+                A = np.array([])
+                for x in range(len(A1)):
+                    A = np.append(A,A1[x])
+                    A = np.append(A,A2[x])
                 A = A.reshape(25,2)
                 AT = A.T
                 ATA = AT@A
+
+                # ATA=[[(Ix * Ix).sum(), (Ix * Iy).sum()],
+                #     [(Ix * Iy).sum(), (Iy * Iy).sum()]]
+
+
                 e, e1 = np.linalg.eig(ATA)
                 e = np.sort(e)
                 # make sure the eigen values are ok
                 if e[1] >= e[0] > 1 and e[1]/e[0] < 100:
+                    # ATb = [[-(Ix * It).sum()], [-(Iy * It).sum()]]
+                    # v = np.linalg.inv(ATA) @ ATb
+
                     v = np.linalg.inv(ATA) @ AT @ B
+                    print(v)
                     # if(v[0] != 0 and v[1] != 0):
                     # find the value after the transformation
                     # du=float(small[0][1]*v[0])
@@ -119,11 +132,11 @@ def opticalFlow(im1: np.ndarray, im2: np.ndarray, step_size=10,
                     # if(du>=0 and du<im2.shape[0] and dv>=0 and dv<im2.shape[1]):
                     # o = [small[0][2], small[0][1]]
                     # n = [dv, du]
-                    du= int(i * v[0])
-                    dv = int(j * v[1])
+                    # du= int(i * v[0])
+                    # dv = int(j * v[1])
                     # du = int(i * v[1])
                     # dv = int(j * v[0])
-                    n = [dv, du]
+                    n = [-v[0], -v[1]]
                     o=[j,i]
                     # add=0
                     # if(n[0]>=0 or n[1]>=0 or n[0]<im2.shape[1] or n[1]<im2.shape[0]):
@@ -263,8 +276,8 @@ def gaussianPyr(img: np.ndarray, levels: int = 4) -> List[np.ndarray]:
         ker = (k).dot(k.T)
         imgc = img.copy()
         for i in range(levels):
+            plist.append(imgc)
             imgblur = cv2.filter2D(imgc, -1, ker, borderType=cv2.BORDER_REFLECT_101)
-            plist.append(imgblur)
             newr = np.floor(imgblur.shape[0] / 2).astype(int)
             newc = np.floor(imgblur.shape[1] / 2).astype(int)
             imnew = np.zeros((newr, newc))
@@ -282,8 +295,8 @@ def gaussianPyr(img: np.ndarray, levels: int = 4) -> List[np.ndarray]:
         ker = (k).dot(k.T)
         imgc = img.copy()
         for i in range(levels):
+            plist.append(imgc)
             imgblur = cv2.filter2D(imgc, -1, ker, borderType=cv2.BORDER_REFLECT_101)
-            plist.append(imgblur)
             newr = np.floor(imgblur.shape[0] / 2).astype(int)
             newc = np.floor(imgblur.shape[1] / 2).astype(int)
             imnew = np.zeros((newr, newc,3))
@@ -416,8 +429,9 @@ def pyrmask(mask: np.ndarray, levels: int) -> np.ndarray:
     if (len(mask.shape) == 2):
         print("black and white")
         for i in range(levels):
+            plist.append(imgc)
             imgblur = cv2.filter2D(imgc, -1, ker, borderType=cv2.BORDER_REFLECT_101)
-            plist.append(imgblur)
+            # plist.append(imgblur)
             newr = np.floor(imgblur.shape[0] / 2).astype(int)
             newc = np.floor(imgblur.shape[1] / 2).astype(int)
             imnew = np.zeros((newr, newc))
@@ -433,8 +447,9 @@ def pyrmask(mask: np.ndarray, levels: int) -> np.ndarray:
     else:
         print("color_img")
         for i in range(levels):
+            plist.append(imgc)
             imgblur = cv2.filter2D(imgc, -1, ker, borderType=cv2.BORDER_REFLECT_101)
-            plist.append(imgblur)
+            # plist.append(imgblur)
             newr = np.floor(imgblur.shape[0] / 2).astype(int)
             newc = np.floor(imgblur.shape[1] / 2).astype(int)
             imnew = np.zeros((newr, newc, 3))
