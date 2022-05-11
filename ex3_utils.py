@@ -104,107 +104,6 @@ def opticalFlow(im1: np.ndarray, im2: np.ndarray, step_size=10,
 
 
 
-# def opticalFlownew(im1: np.ndarray, im2: np.ndarray, old: np.ndarray,step_size=10,
-#                 win_size=5 )-> (np.ndarray, np.ndarray):
-#     """
-#     Given two images, returns the Translation from im1 to im2
-#     :param im1: Image 1
-#     :param im2: Image 2
-#     :param step_size: The image sample size
-#     :param win_size: The optical flow window size (odd number)
-#     :return: Original points [[x,y]...], [[dU,dV]...] for each points
-#     """
-#
-#     ker = np.array([[1, 0, -1]])
-#     rep = int(np.floor(win_size/2))
-#     Ix = cv2.filter2D(im2, -1, ker, borderType=cv2.BORDER_REPLICATE)
-#     Iy = cv2.filter2D(im2, -1, ker.T, borderType=cv2.BORDER_REPLICATE)
-#     It=im2-im1
-#     z=0
-#     origpoints = np.array([])
-#     newpoints = np.array([])
-#     start= int(np.floor(win_size/2))
-#
-#     # for i in range(start,im1.shape[0]-start, step_size):
-#     #     for j in range(start, im1.shape[1]-start,step_size):
-#     for pair in old:
-#         i=pair[0]*2
-#         j=pair[1]*2
-#         try:
-#             # find the u and v for the best matched area
-#             B = -It[i-rep : i+rep+1, j-rep : j+rep+1]
-#             B = B.reshape(win_size**2, 1)
-#             A1 = Ix[i-rep : i+rep+1, j-rep : j+rep+1].flatten()
-#             A2 = Iy[i-rep : i+rep+1, j-rep : j+rep+1].flatten()
-#             # A = np.stack((A1,A2))
-#             A = np.array([])
-#             for x in range(len(A1)):
-#                 A = np.append(A,A1[x])
-#                 A = np.append(A,A2[x])
-#             A = A.reshape(win_size**2,2)
-#             AT = A.T
-#             ATA = AT@A
-#
-#             # ATA=[[(Ix * Ix).sum(), (Ix * Iy).sum()],
-#             #     [(Ix * Iy).sum(), (Iy * Iy).sum()]]
-#             e, e1 = np.linalg.eig(ATA)
-#             e = np.sort(e)
-#             # make sure the eigen values are ok
-#             if e[1] >= e[0] > 1 and e[1]/e[0] < 100:
-#                 # ATb = [[-(Ix * It).sum()], [-(Iy * It).sum()]]
-#                 # v = np.linalg.inv(ATA) @ ATb
-#
-#                 v = np.linalg.inv(ATA) @ AT @ B
-#                 # print(v)
-#                 # n = [dv, du]
-#                 # du= int(i * v[0])
-#                 # dv = int(j * v[1])
-#                 # du = int(i * v[1])
-#                 # dv = int(j * v[0])
-#                 n = [-v[0], -v[1]]
-#                 o=[j,i]
-#                 origpoints = np.append(origpoints, o)
-#                 newpoints = np.append(newpoints,n)
-#
-#
-#         except:
-#             z=z+1
-#             # print("caught exceptain")
-#
-#     origpoints = origpoints.reshape(int(origpoints.shape[0] / 2),2)
-#     newpoints = newpoints.reshape(int(newpoints.shape[0] / 2), 2)
-#
-#     # print("origpoints" , origpoints[0],origpoints[1])
-#     # print("newpoints",newpoints[0],newpoints[0])
-#     print("caught  %d exceptions" %(z))
-#     return origpoints , newpoints
-
-
-#
-# def createPyramids(img:np.ndarray,levels :int):
-#     plist=[]
-#     k=cv2.getGaussianKernel(5,-1)
-#     ker = (k).dot(k.T)
-#     imgc=img.copy()
-#     for i in range(levels):
-#         imgc = cv2.filter2D(imgc,-1,ker,borderType=cv2.BORDER_REPLICATE)
-#         newr = np.floor(imgc.shape[0]/2).astype(int)
-#         newc = np.floor(imgc.shape[1]/2).astype(int)
-#         print((newc, newr))
-#         imnew = np.zeros((newr,newc))
-#         for j in range(newr):
-#             for k in range(newc):
-#                 imnew[j][k]=imgc[j*2][k*2]
-#         plist.append(imnew)
-#         imgc = imnew
-#
-#     f, ax = plt.subplots(1, levels)
-#     for i in range(levels) :
-#         ax[i].imshow(plist[i])
-#     plt.show()
-#
-#     return plist
-
 
 
 def opticalFlowPyrLK(img1: np.ndarray, img2: np.ndarray, k: int,
@@ -220,19 +119,27 @@ def opticalFlowPyrLK(img1: np.ndarray, img2: np.ndarray, k: int,
     """
     A = gaussianPyr(img1,k)
     B = gaussianPyr(img2,k)
-    old, new = opticalFlow(A[-1], B[-1], step_size=stepSize, win_size=winSize)
-    # ws=winSize
-    num=np.arange(-2,-k-1,-1)
-    print(num)
-    for i in range(-2,-k-1,-1):
-        # ws=ws*2
-        print(i)
-        # old1, new1 =opticalFlownew(A[i],B[i],old ,step_size=stepSize,win_size=ws)
-        # new1=new1*2 +new
-        # new2=new1*2+new
-        # new=new1
+    a = A[0].shape[0]
+    b = A[0].shape[1]
 
-    return []
+    change = np.zeros((a,b,2))
+
+    for i in range(-1,-k-1,-1):
+        print(i)
+        old, new = opticalFlow(A[-1], B[-1], step_size=stepSize, win_size=winSize)
+        for x in range(len(old)):
+            a = old[x][0].astype(int)
+            b = old[x][1].astype(int)
+            c = 2 * new[x][0]
+            d = 2 * new[x][1]
+            change[b][a][0] += c
+            change[b][a][1] += d
+
+
+    # plt.imshow(change)
+    # plt.show()
+
+    return change
 
 
 # ---------------------------------------------------------------------------

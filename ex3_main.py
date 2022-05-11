@@ -146,14 +146,28 @@ def main():
     print("ID:", myID())
 
     img_path = 'input/boxMan.jpg'
-    # img_path='input/start1.png'
-    lkDemo(img_path)
+    # lkDemo(img_path)
+
+
 
     img_path1 = 'input/start1.png'
     img_path2 = 'input/start2.jpg'
     im1=cv2.cvtColor(cv2.imread(img_path1), cv2.COLOR_BGR2GRAY)
     im2 = cv2.cvtColor(cv2.imread(img_path2), cv2.COLOR_BGR2GRAY)
-    opticalFlowPyrLK(im1,im2,4,10,5)
+    ans=opticalFlowPyrLK(im1,im2,4,10,5)
+    pts=np.array([])
+    uv=np.array([])
+    for i in range(ans.shape[0]):
+        for j in range(ans.shape[1]):
+           if(ans[i][j][1]!=0 and ans[i][j][0]!=0) :
+                uv = np.append(uv, ans[i][j][1])
+                uv = np.append(uv, ans[i][j][0])
+                pts = np.append(pts, j)
+                pts = np.append(pts, i)
+    pts = pts.reshape(int(pts.shape[0] / 2), 2)
+    uv = uv.reshape(int(uv.shape[0] / 2), 2)
+    displayOpticalFlow(im2,pts,uv)
+
     # hierarchicalkDemo(img_path)
     # compareLK(img_path)
     #
