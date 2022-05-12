@@ -126,10 +126,13 @@ def opticalFlowPyrLK(img1: np.ndarray, img2: np.ndarray, k: int,
 
     for i in range(-1,-k-1,-1):
         print(i)
-        old, new = opticalFlow(A[-1], B[-1], step_size=stepSize, win_size=winSize)
+        print(A[i].shape, B[i].shape)
+        old, new = opticalFlow(A[i], B[i], step_size=stepSize, win_size=winSize)
         for x in range(len(old)):
             a = old[x][0].astype(int)
+            a=a*2**(k+i)
             b = old[x][1].astype(int)
+            b = b * 2 ** (k + i)
             c = 2 * new[x][0]
             d = 2 * new[x][1]
             change[b][a][0] += c
