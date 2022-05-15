@@ -18,8 +18,8 @@ def lkDemo(img_path):
                   [0, 1, -.1],
                   [0, 0, 1]], dtype=np.float)
     img_2 = cv2.warpPerspective(img_1, t, img_1.shape[::-1])
-    plt.imshow(img_2)
-    cv2.imwrite("Input/color2.jpg", img_2)
+
+
     st = time.time()
     pts, uv = opticalFlow(img_1.astype(np.float), img_2.astype(np.float), step_size=20, win_size=5)
     et = time.time()
@@ -32,9 +32,14 @@ def lkDemo(img_path):
 
 
 
+
 def lkpyrDemo(img_path1, img_path2):
     im1 = cv2.cvtColor(cv2.imread(img_path1), cv2.COLOR_BGR2GRAY)
     im2 = cv2.cvtColor(cv2.imread(img_path2), cv2.COLOR_BGR2GRAY)
+
+    # plt.imshow(im1-im2)
+    # plt.show()
+
     ans = opticalFlowPyrLK(im1, im2, 4, 10, 5)
     pts = np.array([])
     uv = np.array([])
@@ -83,7 +88,16 @@ def displayOpticalFlow(img: np.ndarray, pts: np.ndarray, uvs: np.ndarray):
 # ---------------------------------------------------------------------------
 # ------------------------ Image Alignment & Warping ------------------------
 # ---------------------------------------------------------------------------
-
+def translationcorrdemo(img_path):
+    img_1 = cv2.cvtColor(cv2.imread(img_path), cv2.COLOR_BGR2GRAY)
+    t = np.array([[1, 0, -10],
+                  [0, 1, +50],
+                  [0, 0, 1]], dtype=np.float)
+    img_2 = cv2.warpPerspective(img_1, t, img_1.shape[::-1])
+    st = time.time()
+    findTranslationCorr(img_1,img_2)
+    et = time.time()
+    print("Time: {:.4f}".format(et - st))
 
 def imageWarpingDemo(img_path):
     """
@@ -167,15 +181,15 @@ def blendDemo():
 
 def main():
     print("ID:", myID())
-
-    img_path = 'input/boxMan.jpg'
+    #
+    # img_path = 'input/boxMan.jpg'
     # lkDemo(img_path)
 
-    # make a new warped image
-    # img_path = 'input/color1.png'
+    # # make a new warped image
+    # img_path = 'input/color1.jpg'
     # img_1 = cv2.cvtColor(cv2.imread(img_path), cv2.COLOR_BGR2GRAY)
-    # t = np.array([[1, 0, -.4],
-    #               [0, 1, -.2],
+    # t = np.array([[1, 0, -.2],
+    #               [0, 1, -.1],
     #               [0, 0, 1]], dtype=np.float)
     # img_2 = cv2.warpPerspective(img_1, t, img_1.shape[::-1])
     # plt.imshow(img_2)
@@ -185,20 +199,26 @@ def main():
 
 
 
-    img_path1 = 'input/start1.jpg'
-    img_path2 = 'input/start2.jpg'
+    img_path1 = 'input/color1.jpg'
+    # img_path2 = 'input/color2.jpg'
 
-    lkpyrDemo(img_path1,img_path2)
+    # lkpyrDemo(img_path1,img_path2)
+
     # hierarchicalkDemo(img_path)
     # compareLK(img_path)
     #
     # imageWarpingDemo(img_path)
     #
-    # pyrGaussianDemo('input/pyr_bit.jpg')
-    # pyrLaplacianDemo('input/pyr_bit.jpg')
-    # blendDemo()
+    pyrGaussianDemo('input/pyr_bit.jpg')
+    pyrLaplacianDemo('input/pyr_bit.jpg')
+    blendDemo()
     # img = cv2.cvtColor(cv2.imread(img_path), cv2.COLOR_BGR2GRAY)
     # createPyramids(img,5)
+
+    # img_path1 = 'input/color1.jpg'
+    # translationcorrdemo(img_path1)
+
+
 
 if __name__ == '__main__':
     main()

@@ -28,8 +28,7 @@ def NormalizeData(data):
 
 
 
-def opticalFlow(im1: np.ndarray, im2: np.ndarray, step_size=10,
-                win_size=5) -> (np.ndarray, np.ndarray):
+def opticalFlow(im1: np.ndarray, im2: np.ndarray, step_size=10, win_size=5) -> (np.ndarray, np.ndarray):
     """
     Given two images, returns the Translation from im1 to im2
     :param im1: Image 1
@@ -72,16 +71,8 @@ def opticalFlow(im1: np.ndarray, im2: np.ndarray, step_size=10,
                 e = np.sort(e)
                 # make sure the eigen values are ok
                 if e[1] >= e[0] > 1 and e[1]/e[0] < 100:
-                    # ATb = [[-(Ix * It).sum()], [-(Iy * It).sum()]]
-                    # v = np.linalg.inv(ATA) @ ATb
-
-                    v = np.linalg.inv(ATA) @ AT @ B
-                    # print(v)
-                    # n = [dv, du]
-                    # du= int(i * v[0])
-                    # dv = int(j * v[1])
-                    # du = int(i * v[1])
-                    # dv = int(j * v[0])
+                    v = np.linalg.inv(ATA) @ (AT @ B)
+                    # n = [v[0], v[1]]
                     n = [-v[0], -v[1]]
                     o=[j,i]
                     origpoints = np.append(origpoints, o)
@@ -119,30 +110,40 @@ def opticalFlowPyrLK(img1: np.ndarray, img2: np.ndarray, k: int,
     """
     A = gaussianPyr(img1,k)
     B = gaussianPyr(img2,k)
-    a = A[0].shape[0]
-    b = A[0].shape[1]
+    a = A[-1].shape[0]
+    b = A[-1].shape[1]
 
-    change = np.zeros((a,b,2))
+    changeold=0
 
     for i in range(-1,-k-1,-1):
-        print(i)
-        print(A[i].shape, B[i].shape)
         old, new = opticalFlow(A[i], B[i], step_size=stepSize, win_size=winSize)
+        m = A[0].shape[0]
+        n = A[0].shape[1]
+        changenew = np.zeros((m, n, 2))
         for x in range(len(old)):
             a = old[x][0].astype(int)
-            a=a*2**(k+i)
+            a=a*(2**(k+i)) # placing in the correct spot in change
             b = old[x][1].astype(int)
-            b = b * 2 ** (k + i)
+            b = b * (2**(k+i)) # placing in the correct spot in change
             c = 2 * new[x][0]
             d = 2 * new[x][1]
-            change[b][a][0] += c
-            change[b][a][1] += d
+            changenew[b][a][0] += c
+            changenew[b][a][1] += d
 
+            if i!=-1:
+               for m in range(changeold.shape[0]) :
+                   for n in range(changeold.shape[1] ):
+                       if m*2<changenew.shape[0] and n*2 <changenew.shape[1]:
+                            changenew[m*2,n*2]+=changeold[m,n]
 
-    # plt.imshow(change)
+        changeold=changenew
+
+    # plt.imshow(change[:, :, 0])
+    # plt.show()
+    # plt.imshow(change[:, :, 1])
     # plt.show()
 
-    return change
+    return changenew
 
 
 # ---------------------------------------------------------------------------
@@ -174,6 +175,76 @@ def findTranslationCorr(im1: np.ndarray, im2: np.ndarray) -> np.ndarray:
     :param im2: image 1 after Translation.
     :return: Translation matrix by correlation.
     """
+    im1=im1/255
+    im2=im2/255
+    win=49
+    pad=win//2
+    im1pad= cv2.copyMakeBorder(im1, pad, pad, pad, pad, cv2.BORDER_REPLICATE, None, value=0)
+    im2pad= cv2.copyMakeBorder(im2, pad, pad, pad, pad, cv2.BORDER_REPLICATE, None, value=0)
+    listt=[]
+    for i in range(pad,im1.shape[0]-pad,win):
+        for j in range(pad, im1.shape[1] - pad, win):
+            window=im1pad[i-pad:i+pad+1,j-pad:j+pad+1]
+            a=window.reshape(1,win*win)
+            aT=a.T
+            big=[(0,0,0)]
+            for k in range(i-win,i+win,1):
+                for l in range(j-win,j+win,1):
+                    if  k-pad>=0 and l-pad>=0 and k+pad+1<im2pad.shape[0] and l+pad+1 <im2pad.shape[1]:
+                        window2= im2pad[k-pad:k+pad+1,l-pad:l+pad+1]
+                        b=window2.reshape(1,win*win)
+                        bT=b.T
+                        top=np.dot(a,bT)
+                        bottom=np.dot(a,aT)+np.dot(b,bT)
+                        if bottom!=0:
+                            corr=top/bottom
+                            if corr>big[0][0]:
+                                big.clear()
+                                big.insert(0,(corr,k,l))
+                            elif corr==big[0][0]:
+                                big.insert(0, (corr, k, l))
+            # print(big[0],big[-1])
+            # print(i,j)
+            for m in range (len(big)):
+                listt.append((big[m],(i,j)))
+            # listt.append((big[0],(i,j)))
+
+    # print(listt)
+    t1=0
+    t2=0
+    difflist=[]
+    for x in listt:
+        print(x)
+        i=x[1][0]
+        j=x[1][1]
+        k=x[0][1]
+        l=x[0][2]
+        t1=k-i
+        t2=l-j
+        print(t1, t2)
+        t = np.array([[1, 0, t1],
+                      [0, 1, t2],
+                      [0, 0, 1]], dtype=np.float)
+        new = cv2.warpPerspective(im1, t, im1.shape[::-1])
+
+        if(im2-new).sum()<0.5:
+            difflist.append(((im2-new).sum(),t1,t2))
+    small=0.5
+    for x in difflist:
+        if x[0]<small:
+            small=x[0]
+            t1=x[1]
+            t2=x[2]
+
+    t = np.array([[1, 0, t1],
+                  [0, 1, t2],
+                  [0, 0, 1]], dtype=np.float)
+    print(t)
+    new = cv2.warpPerspective(im1, t, im1.shape[::-1])
+    f, ax = plt.subplots(1,2)
+    ax[0].imshow(im2)
+    ax[1].imshow(new)
+    plt.show()
     pass
 
 
@@ -212,7 +283,7 @@ def gaussianPyr(img: np.ndarray, levels: int = 4) -> List[np.ndarray]:
     """
     # black and white img
     if(len(img.shape)==2):
-        print("black and white")
+        # print("black and white")
         plist = []
         k = cv2.getGaussianKernel(5, -1)
         ker = (k).dot(k.T)
@@ -231,7 +302,7 @@ def gaussianPyr(img: np.ndarray, levels: int = 4) -> List[np.ndarray]:
 
     # color image
     else:
-        print("color_img")
+        # print("color_img")
         plist = []
         k = cv2.getGaussianKernel(5, -1)
         ker = (k).dot(k.T)
@@ -264,17 +335,17 @@ def laplaceianReduce(img: np.ndarray, levels: int = 4) -> List[np.ndarray]:
     imgc = img.copy()
     # black and white image
     if len(img.shape)==2:
-        print("black and white")
+        # print("black and white")
         for i in range(levels):
             imgblur = cv2.filter2D(imgc, -1, ker, borderType=cv2.BORDER_REFLECT_101)
-            lapimg=(imgc-imgblur)
-            plist.append(lapimg)
-            newr = np.floor(imgc.shape[0] / 2).astype(int)
-            newc = np.floor(imgc.shape[1] / 2).astype(int)
+            imglap = (imgc - imgblur)
+            plist.append(imglap)
+            newr = np.floor(imgblur.shape[0] / 2).astype(int)
+            newc = np.floor(imgblur.shape[1] / 2).astype(int)
             imnew = np.zeros((newr, newc))
             for j in range(newr):
                 for k in range(newc):
-                    imnew[j][k] = imgc[j * 2][k * 2]
+                    imnew[j][k] = imgblur[j * 2][k * 2]
             if i == levels-1:
                 plist.append(imgc)
             imgc = imnew
@@ -283,7 +354,7 @@ def laplaceianReduce(img: np.ndarray, levels: int = 4) -> List[np.ndarray]:
 
     # color image
     else:
-        print("color_img")
+        # print("color_img")
         for i in range(levels):
             imgblur= cv2.filter2D(imgc, -1, ker, borderType=cv2.BORDER_REFLECT_101)
             imglap=(imgc-imgblur)
@@ -313,9 +384,8 @@ def laplaceianExpand(lap_pyr: List[np.ndarray]) -> np.ndarray:
     ker = ker * 4
     imgn = lap_pyr[-1]
     if (len(lap_pyr[-1].shape) == 2):
-        print("black and white")
+        # print("black and white")
         for i in range(len(lap_pyr)-2,0,-1):
-            print(i)
             imgn=imgn+lap_pyr[i]
             newr = lap_pyr[i - 1].shape[0]
             newc = lap_pyr[i - 1].shape[1]
@@ -326,20 +396,17 @@ def laplaceianExpand(lap_pyr: List[np.ndarray]) -> np.ndarray:
                         j1=j
                         k1=k
                         if j >= imgn.shape[0]:
-                            print("j is big")
                             j = imgn.shape[0]-1
                         if k >= imgn.shape[1]:
-                            print("k is big")
                             k=imgn.shape[1]-1
                         newimg[j*2][k*2]=imgn[j1][k1]
 
-            imgn= cv2.filter2D(newimg, -1, ker, borderType=cv2.BORDER_REPLICATE)
-            # imgn=cv2.GaussianBlur(newimg,(5,5),cv2.BORDER_DEFAULT)
+            imgn= cv2.filter2D(newimg, -1, ker, borderType=cv2.BORDER_REFLECT_101)
         imgn = imgn + lap_pyr[0]
         return imgn
 
     else:
-        print("color img")
+        # print("color img")
         for i in range(len(lap_pyr) - 2, 0, -1):
             imgn = imgn + lap_pyr[i]
             newr=lap_pyr[i - 1].shape[0]
@@ -352,10 +419,8 @@ def laplaceianExpand(lap_pyr: List[np.ndarray]) -> np.ndarray:
                             j1 = j
                             k1 = k
                             if j >= imgn.shape[0]:
-                                # print("j is big")
                                 j1 = imgn.shape[0] - 1
                             if k >= imgn.shape[1]:
-                                # print("k is big")
                                 k1 = imgn.shape[1] - 1
                             newimg[j * 2][k * 2] = imgn[j1][k1]
             imgn = cv2.filter2D(newimg, -1, ker, borderType=cv2.BORDER_REFLECT_101)
@@ -369,11 +434,10 @@ def pyrmask(mask: np.ndarray, levels: int) -> np.ndarray:
     ker = (k).dot(k.T)
     imgc = mask.copy()
     if (len(mask.shape) == 2):
-        print("black and white")
+        # print("black and white")
         for i in range(levels):
             plist.append(imgc)
             imgblur = cv2.filter2D(imgc, -1, ker, borderType=cv2.BORDER_REFLECT_101)
-            # plist.append(imgblur)
             newr = np.floor(imgblur.shape[0] / 2).astype(int)
             newc = np.floor(imgblur.shape[1] / 2).astype(int)
             imnew = np.zeros((newr, newc))
@@ -387,11 +451,10 @@ def pyrmask(mask: np.ndarray, levels: int) -> np.ndarray:
 
         # color image
     else:
-        print("color_img")
+        # print("color_img")
         for i in range(levels):
             plist.append(imgc)
             imgblur = cv2.filter2D(imgc, -1, ker, borderType=cv2.BORDER_REFLECT_101)
-            # plist.append(imgblur)
             newr = np.floor(imgblur.shape[0] / 2).astype(int)
             newc = np.floor(imgblur.shape[1] / 2).astype(int)
             imnew = np.zeros((newr, newc, 3))
@@ -406,8 +469,7 @@ def pyrmask(mask: np.ndarray, levels: int) -> np.ndarray:
 
 
 
-def pyrBlend(img_1: np.ndarray, img_2: np.ndarray,
-             mask: np.ndarray, levels: int) -> (np.ndarray, np.ndarray):
+def pyrBlend(img_1: np.ndarray, img_2: np.ndarray,mask: np.ndarray, levels: int) -> (np.ndarray, np.ndarray):
     """
     Blends two images using PyramidBlend method
     :param img_1: Image 1
@@ -416,37 +478,19 @@ def pyrBlend(img_1: np.ndarray, img_2: np.ndarray,
     :param levels: Pyramid depth
     :return: (Naive blend, Blended Image)
     """
+
+    k = cv2.getGaussianKernel(5, -1)
+    ker = (k).dot(k.T)
     l1=laplaceianReduce(img_1,levels)
     l2=laplaceianReduce(img_2,levels)
-    l3=laplaceianReduce(mask,levels)
+    # l3=laplaceianReduce(mask,levels)
     l5=pyrmask(mask,levels)
-    # f, ax = plt.subplots(1, levels+1)
-    # for i in range(levels+1):
-    #     ax[i].imshow(l5[i])
-    # plt.show()
     l4 = []
 
     for i in range(levels+1):
-        # plt.imshow(1 - l3[i])
-        # plt.show
-        # plt.imshow((l3[i]))
-        # plt.show
         l4.append((l5[i])*l1[i]+(1-l5[i])*l2[i])
-        # plt.imshow(l4[-1])
-        # plt.show
-        # print(l1[i].shape, l2[i].shape, l3[i].shape, l4[i].shape, l5[i].shape)
-
-    # f, ax = plt.subplots(1, 4)
-    # for i in range(levels+1):
-    #     plt.imshow(l4[i])
-    #     plt.show()
-        # ax[0].imshow(l4[i])
-        # ax[1].imshow(l2[i])
-        # ax[2].imshow(l3[i])
-        # ax[3].imshow(l4[i])
-        # plt.show()
     blended1=NormalizeData(laplaceianExpand(l4))
     naiveblend=NormalizeData(mask*img_1+(1-mask)*img_2)
-
+    # naiveblend=cv2.filter2D(naiveblend, -1, ker, borderType=cv2.BORDER_REFLECT_101)
     return naiveblend, blended1
 
