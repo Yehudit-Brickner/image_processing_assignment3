@@ -115,15 +115,20 @@ def translationlkdemo(img_path):
 
 def rigidlkdemo(img_path):
     img_1 = cv2.cvtColor(cv2.imread(img_path), cv2.COLOR_BGR2GRAY)
-    t = np.array([[1, 0, -.2],
+    t1 = np.array([[1, 0, -.2],
                   [0, 1, -.4],
                   [0, 0, 1]], dtype=np.float)
+    t2=np.array(([np.cos(0.01),-np.sin(0.01),0],[np.sin(0.01),np.cos(0.01),0],[0,0,1]))
+
+    t=t1@t2
     img_2 = cv2.warpPerspective(img_1, t, img_1.shape[::-1])
+    plt.imshow(img_2)
+    plt.show()
     st = time.time()
     mat = findRigidLK(img_1, img_2)
     et = time.time()
     print("Time: {:.4f}".format(et - st))
-    print("mat\n", mat, "\nt\n", t)
+    # print("mat\n", mat, "\nt\n", t)
 
 def imageWarpingDemo(img_path):
     """
@@ -230,8 +235,8 @@ def main():
     #
     # lkpyrDemo(img_path1,img_path2)
 
-    translationlkdemo(img_path1)
-
+    # translationlkdemo(img_path1)
+    rigidlkdemo(img_path1)
     # hierarchicalkDemo(img_path)
     # compareLK(img_path)
     #

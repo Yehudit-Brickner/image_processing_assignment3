@@ -230,7 +230,12 @@ def findRigidLK(im1: np.ndarray, im2: np.ndarray) -> np.ndarray:
     :param im2: image 1 after Rigid.
     :return: Rigid matrix by LK.
     """
+    listt = []
+    old, new = opticalFlow(im1, im2, 10, 5)
+    
+
     pass
+
 
 
 def findTranslationCorr(im1: np.ndarray, im2: np.ndarray) -> np.ndarray:
