@@ -94,11 +94,7 @@ def opticalFlow(im1: np.ndarray, im2: np.ndarray, step_size=10, win_size=5) -> (
 
 
 
-
-
-
-def opticalFlowPyrLK(img1: np.ndarray, img2: np.ndarray, k: int,
-                     stepSize: int, winSize: int) -> np.ndarray:
+def opticalFlowPyrLK(img1: np.ndarray, img2: np.ndarray, k: int, stepSize: int, winSize: int) -> np.ndarray:
     """
     :param img1: First image
     :param img2: Second image
@@ -110,40 +106,84 @@ def opticalFlowPyrLK(img1: np.ndarray, img2: np.ndarray, k: int,
     """
     A = gaussianPyr(img1,k)
     B = gaussianPyr(img2,k)
-    a = A[-1].shape[0]
-    b = A[-1].shape[1]
 
-    changeold=0
+    #try1
+    # a = A[0].shape[0]
+    # b = A[0].shape[1]
+    #
+    # change=np.zeros((a,b,2))
+    # for i in range(-1,-k-1,-1):
+    #     print("i=", i, "k=", k)
+    #     old, new = opticalFlow(A[i], B[i], step_size=stepSize, win_size=winSize)
+    #     for x in range(len(old)):
+    #         a = old[x][0].astype(int)
+    #         a1 = a*(2**(k+i)) # placing in the correct spot in change
+    #         b = old[x][1].astype(int)
+    #         b1 = b * (2**(k+i)) # placing in the correct spot in change
+    #         c = 2 * new[x][0]
+    #         d = 2 * new[x][1]
+    #         change[b1][a1][0] += c
+    #         change[b1][a1][1] += d
+    # return change
 
-    for i in range(-1,-k-1,-1):
+    #try2
+    # for i in range(-1,-k-1,-1):
+    #     print("i=", i, "k=", k)
+    #     old, new = opticalFlow(A[i], B[i], step_size=stepSize, win_size=winSize)
+    #     m = A[0].shape[0]
+    #     n = A[0].shape[1]
+    #     changenew = np.zeros((m, n, 2))
+    #     for x in range(len(old)):
+    #         a = old[x][0].astype(int)
+    #         a = a*(2**(k+i)) # placing in the correct spot in change
+    #         b = old[x][1].astype(int)
+    #         b = b * (2**(k+i)) # placing in the correct spot in change
+    #         c = 2 * new[x][0]
+    #         d = 2 * new[x][1]
+    #         changenew[b][a][0] += c
+    #         changenew[b][a][1] += d
+    #
+    #         if i!=-1:
+    #            for m in range(changeold.shape[0]) :
+    #                for n in range(changeold.shape[1] ):
+    #                    if m*2<changenew.shape[0] and n*2 <changenew.shape[1]:
+    #                         changenew[m*2,n*2]+=changeold[m,n]
+    #
+    #     changeold=changenew
+    #  return chengeold
+
+    # for i in range(len(A)):
+    #     a = A[i].shape[0]
+    #     b = A[i].shape[1]
+    #     C.append(np.zeros((a,b,2)))
+
+    #try3
+    C = []
+    for i in range(len(A)):
+        a = A[i].shape[0]
+        b = A[i].shape[1]
+        change=np.zeros((a,b,2))
         old, new = opticalFlow(A[i], B[i], step_size=stepSize, win_size=winSize)
-        m = A[0].shape[0]
-        n = A[0].shape[1]
-        changenew = np.zeros((m, n, 2))
         for x in range(len(old)):
-            a = old[x][0].astype(int)
-            a=a*(2**(k+i)) # placing in the correct spot in change
-            b = old[x][1].astype(int)
-            b = b * (2**(k+i)) # placing in the correct spot in change
-            c = 2 * new[x][0]
-            d = 2 * new[x][1]
-            changenew[b][a][0] += c
-            changenew[b][a][1] += d
+            b=old[x][0].astype(int)
+            a=old[x][1].astype(int)
+            c=new[x][0]
+            d=new[x][1]
+            change[a][b][0]=c
+            change[a][b][1]=d
+        C.append(change)
 
-            if i!=-1:
-               for m in range(changeold.shape[0]) :
-                   for n in range(changeold.shape[1] ):
-                       if m*2<changenew.shape[0] and n*2 <changenew.shape[1]:
-                            changenew[m*2,n*2]+=changeold[m,n]
 
-        changeold=changenew
+    for x in range(-1,-k,-1):
+        y = x - 1
+        for i in range(C[x].shape[0]):
+            for j in range(C[x].shape[1]):
+                C[y][i*2][j*2][0] += C[x][i][j][0]*2
+                C[y][i*2][j*2][1] += C[x][i][j][1]*2
 
-    # plt.imshow(change[:, :, 0])
-    # plt.show()
-    # plt.imshow(change[:, :, 1])
-    # plt.show()
+    return C[0]
 
-    return changenew
+
 
 
 # ---------------------------------------------------------------------------
@@ -157,7 +197,31 @@ def findTranslationLK(im1: np.ndarray, im2: np.ndarray) -> np.ndarray:
     :param im2: image 1 after Translation.
     :return: Translation matrix by LK.
     """
-    pass
+    listt=[]
+    old, new=opticalFlow(im1,im2,10,5)
+    for x in range(len(new)):
+        # print("new",new[x])
+        t1=new[x][0]
+        t2=new[x][1]
+        # print(t1, t2)
+        t = np.array([[1, 0, t1],
+                      [0, 1, t2],
+                      [0, 0, 1]], dtype=np.float)
+        newimg = cv2.warpPerspective(im1, t, im1.shape[::-1])
+        listt.append(((im2-newimg).sum(),t1,t2))
+    y = float("inf")
+    spot=0
+    for x in range(len (listt)):
+        if listt[x][0]<y:
+            y=listt[x][0]
+            spot=x
+    t1=listt[spot][1]
+    t2=listt[spot][2]
+    t = np.array([[1, 0, t1],
+                  [0, 1, t2],
+                  [0, 0, 1]], dtype=np.float)
+    print(t)
+    return t
 
 
 def findRigidLK(im1: np.ndarray, im2: np.ndarray) -> np.ndarray:

@@ -31,8 +31,6 @@ def lkDemo(img_path):
     displayOpticalFlow(img_2, pts, uv)
 
 
-
-
 def lkpyrDemo(img_path1, img_path2):
     im1 = cv2.cvtColor(cv2.imread(img_path1), cv2.COLOR_BGR2GRAY)
     im2 = cv2.cvtColor(cv2.imread(img_path2), cv2.COLOR_BGR2GRAY)
@@ -98,6 +96,34 @@ def translationcorrdemo(img_path):
     findTranslationCorr(img_1,img_2)
     et = time.time()
     print("Time: {:.4f}".format(et - st))
+
+
+
+def translationlkdemo(img_path):
+    img_1 = cv2.cvtColor(cv2.imread(img_path), cv2.COLOR_BGR2GRAY)
+    t = np.array([[1, 0, -.2],
+                  [0, 1, -.4],
+                  [0, 0, 1]], dtype=np.float)
+    img_2 = cv2.warpPerspective(img_1, t, img_1.shape[::-1])
+    st = time.time()
+    mat=findTranslationLK(img_1, img_2)
+    et = time.time()
+    print("Time: {:.4f}".format(et - st))
+    print("mat\n",mat ,"\nt\n", t)
+
+
+
+def rigidlkdemo(img_path):
+    img_1 = cv2.cvtColor(cv2.imread(img_path), cv2.COLOR_BGR2GRAY)
+    t = np.array([[1, 0, -.2],
+                  [0, 1, -.4],
+                  [0, 0, 1]], dtype=np.float)
+    img_2 = cv2.warpPerspective(img_1, t, img_1.shape[::-1])
+    st = time.time()
+    mat = findRigidLK(img_1, img_2)
+    et = time.time()
+    print("Time: {:.4f}".format(et - st))
+    print("mat\n", mat, "\nt\n", t)
 
 def imageWarpingDemo(img_path):
     """
@@ -185,7 +211,7 @@ def main():
     # img_path = 'input/boxMan.jpg'
     # lkDemo(img_path)
 
-    # # make a new warped image
+    # make a new warped image
     # img_path = 'input/color1.jpg'
     # img_1 = cv2.cvtColor(cv2.imread(img_path), cv2.COLOR_BGR2GRAY)
     # t = np.array([[1, 0, -.2],
@@ -199,19 +225,21 @@ def main():
 
 
 
-    img_path1 = 'input/color1.jpg'
-    # img_path2 = 'input/color2.jpg'
-
+    img_path1 = 'input/boxMan.jpg'
+    # img_path2 = 'input/boxMan2.jpg'
+    #
     # lkpyrDemo(img_path1,img_path2)
+
+    translationlkdemo(img_path1)
 
     # hierarchicalkDemo(img_path)
     # compareLK(img_path)
     #
     # imageWarpingDemo(img_path)
     #
-    pyrGaussianDemo('input/pyr_bit.jpg')
-    pyrLaplacianDemo('input/pyr_bit.jpg')
-    blendDemo()
+    # pyrGaussianDemo('input/pyr_bit.jpg')
+    # pyrLaplacianDemo('input/pyr_bit.jpg')
+    # blendDemo()
     # img = cv2.cvtColor(cv2.imread(img_path), cv2.COLOR_BGR2GRAY)
     # createPyramids(img,5)
 
