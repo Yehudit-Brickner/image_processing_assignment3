@@ -97,8 +97,8 @@ def displayOpticalFlow(img: np.ndarray, pts: np.ndarray, uvs: np.ndarray):
 # ---------------------------------------------------------------------------
 def translationcorrdemo(img_path):
     img_1 = cv2.cvtColor(cv2.imread(img_path), cv2.COLOR_BGR2GRAY)
-    t = np.array([[1, 0, -10],
-                  [0, 1, +50],
+    t = np.array([[1, 0, -2],
+                  [0, 1, 5],
                   [0, 0, 1]], dtype=np.float)
     img_2 = cv2.warpPerspective(img_1, t, img_1.shape[::-1])
     st = time.time()

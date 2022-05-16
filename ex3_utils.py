@@ -304,7 +304,7 @@ def findTranslationCorr(im1: np.ndarray, im2: np.ndarray) -> np.ndarray:
             window=im1pad[i-pad:i+pad+1,j-pad:j+pad+1]
             a=window.reshape(1,win*win)
             aT=a.T
-            big=[(0,0,0)]
+            big=[(np.array([0]),0,0)]
             for k in range(i-win,i+win,3):
                 for l in range(j-win,j+win,3):
                     if  k-pad>=0 and l-pad>=0 and k+pad+1<im2pad.shape[0] and l+pad+1 <im2pad.shape[1]:
