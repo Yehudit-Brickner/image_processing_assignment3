@@ -70,10 +70,10 @@ def opticalFlow(im1: np.ndarray, im2: np.ndarray, step_size=10, win_size=5) -> (
                 e, e1 = np.linalg.eig(ATA)
                 e = np.sort(e)
                 # make sure the eigen values are ok
-                if e[1] >= e[0] > 1 and e[1]/e[0] < 100:
+                if  e[0] > 1 and e[1]/e[0] < 100:
                     v = np.linalg.inv(ATA) @ (AT @ B)
-                    # n = [v[0], v[1]]
-                    n = [-v[0], -v[1]]
+                    n = [v[0], v[1]]
+                    # n = [-v[0], -v[1]]
                     o=[j,i]
                     origpoints = np.append(origpoints, o)
                     newpoints = np.append(newpoints,n)
@@ -176,11 +176,15 @@ def opticalFlowPyrLK(img1: np.ndarray, img2: np.ndarray, k: int, stepSize: int, 
 
     for x in range(-1,-k,-1):
         y = x - 1
+        print("x=",x, " y=", y)
+        print("sumx",(C[x]*C[x]).sum())
+        print("sumy",(C[y] * C[y]).sum())
         for i in range(C[x].shape[0]):
             for j in range(C[x].shape[1]):
-                C[y][i*2][j*2][0] += C[x][i][j][0]*2
-                C[y][i*2][j*2][1] += C[x][i][j][1]*2
-
+                C[y][i*2][j*2][0] += (C[x][i][j][0]*2)
+                C[y][i*2][j*2][1] += (C[x][i][j][1]*2)
+        print("sumy",(C[y] * C[y]).sum())
+    print((C[0] * C[0]).sum())
     return C[0]
 
 
@@ -209,18 +213,41 @@ def findTranslationLK(im1: np.ndarray, im2: np.ndarray) -> np.ndarray:
                       [0, 0, 1]], dtype=np.float)
         newimg = cv2.warpPerspective(im1, t, im1.shape[::-1])
         listt.append(((im2-newimg).sum(),t1,t2))
+   # # check median
+   #  m1 = np.median(new, 0)
+   #  t1 = m1[0]
+   #  t2 = m1[1]
+   #  t = np.array([[1, 0, t1],
+   #                [0, 1, t2],
+   #                [0, 0, 1]], dtype=np.float)
+   #  newimg = cv2.warpPerspective(im1, t, im1.shape[::-1])
+   #  listt.append(((im2 - newimg).sum(), t1, t2))
+   #  # check mean
+   #  m1 = np.mean(new, 0)
+   #  t1 = m1[0]
+   #  t2 = m1[1]
+   #  t = np.array([[1, 0, t1],
+   #                [0, 1, t2],
+   #                [0, 0, 1]], dtype=np.float)
+   #  newimg = cv2.warpPerspective(im1, t, im1.shape[::-1])
+   #  listt.append(((im2 - newimg).sum(), t1, t2))
+
     y = float("inf")
     spot=0
     for x in range(len (listt)):
         if listt[x][0]<y:
             y=listt[x][0]
             spot=x
+        if y==0:
+            break
+
     t1=listt[spot][1]
     t2=listt[spot][2]
     t = np.array([[1, 0, t1],
                   [0, 1, t2],
                   [0, 0, 1]], dtype=np.float)
-    print(t)
+
+    # print(t)
     return t
 
 
@@ -232,7 +259,7 @@ def findRigidLK(im1: np.ndarray, im2: np.ndarray) -> np.ndarray:
     """
     listt = []
     old, new = opticalFlow(im1, im2, 10, 5)
-    
+
 
     pass
 
@@ -246,36 +273,62 @@ def findTranslationCorr(im1: np.ndarray, im2: np.ndarray) -> np.ndarray:
     """
     im1=im1/255
     im2=im2/255
-    win=49
+    win=19
     pad=win//2
     im1pad= cv2.copyMakeBorder(im1, pad, pad, pad, pad, cv2.BORDER_REPLICATE, None, value=0)
     im2pad= cv2.copyMakeBorder(im2, pad, pad, pad, pad, cv2.BORDER_REPLICATE, None, value=0)
-    listt=[]
+    listt=[(np.array([0]),0,0)]
+    # big = [(0, 0, 0)]
+    # for i in range(pad,im1.shape[0]-pad,win):
+    #     for j in range(pad, im1.shape[1] - pad, win):
+    #         window = im1pad[i-pad: i+pad+1, j-pad: j+pad+1]
+    #         a=window.reshape(1,win*win)
+    #         aT=a.T
+    #         window2 = im2pad[i-pad: i+pad+1, j-pad: j+pad+1]
+    #         b=window2.reshape(1,win*win)
+    #         bT=b.T
+    #         top=np.dot(a,bT)
+    #         bottom=np.dot(a,aT)+np.dot(b,bT)
+    #         if bottom!=0:
+    #             corr = top / bottom
+    #             print(corr)
+    #             if corr > big[0][0]:
+    #                 big.clear()
+    #                 big.insert(0, (corr,i,j))
+    #             elif corr==big[0][0]:
+    #                 big.insert(0, (corr,i,j))
+    #
+
     for i in range(pad,im1.shape[0]-pad,win):
         for j in range(pad, im1.shape[1] - pad, win):
             window=im1pad[i-pad:i+pad+1,j-pad:j+pad+1]
             a=window.reshape(1,win*win)
             aT=a.T
             big=[(0,0,0)]
-            for k in range(i-win,i+win,1):
-                for l in range(j-win,j+win,1):
+            for k in range(i-win,i+win,3):
+                for l in range(j-win,j+win,3):
                     if  k-pad>=0 and l-pad>=0 and k+pad+1<im2pad.shape[0] and l+pad+1 <im2pad.shape[1]:
                         window2= im2pad[k-pad:k+pad+1,l-pad:l+pad+1]
                         b=window2.reshape(1,win*win)
-                        bT=b.T
-                        top=np.dot(a,bT)
-                        bottom=np.dot(a,aT)+np.dot(b,bT)
-                        if bottom!=0:
-                            corr=top/bottom
-                            if corr>big[0][0]:
-                                big.clear()
-                                big.insert(0,(corr,k,l))
-                            elif corr==big[0][0]:
-                                big.insert(0, (corr, k, l))
+                        if not np.array_equal(a,b):
+                            bT=b.T
+                            top=np.dot(a,bT)
+                            bottom=np.dot(a,aT)+np.dot(b,bT)
+                            if bottom!=0:
+                                corr=top/bottom
+                                # print(corr)
+                                if corr>big[0][0]:
+                                    big.clear()
+                                    big.insert(0,(corr,k,l))
+                                elif corr==big[0][0]:
+                                    big.insert(0, (corr, k, l))
             # print(big[0],big[-1])
             # print(i,j)
-            for m in range (len(big)):
-                listt.append((big[m],(i,j)))
+            print(big[0][0][0],listt[0][0][0])
+            if big[0][0][0]>listt[0][0][0]:
+                listt.clear()
+                for m in range (len(big)):
+                    listt.append((big[m],(i,j)))
             # listt.append((big[0],(i,j)))
 
     # print(listt)
@@ -296,8 +349,8 @@ def findTranslationCorr(im1: np.ndarray, im2: np.ndarray) -> np.ndarray:
                       [0, 0, 1]], dtype=np.float)
         new = cv2.warpPerspective(im1, t, im1.shape[::-1])
 
-        if(im2-new).sum()<0.5:
-            difflist.append(((im2-new).sum(),t1,t2))
+        if((im2-new)*(im2-new)).sum()<2:
+            difflist.append((((im2-new)*(im2-new)).sum(),t1,t2))
     small=0.5
     for x in difflist:
         if x[0]<small:
@@ -314,7 +367,7 @@ def findTranslationCorr(im1: np.ndarray, im2: np.ndarray) -> np.ndarray:
     ax[0].imshow(im2)
     ax[1].imshow(new)
     plt.show()
-    pass
+
 
 
 def findRigidCorr(im1: np.ndarray, im2: np.ndarray) -> np.ndarray:

@@ -43,14 +43,23 @@ def lkpyrDemo(img_path1, img_path2):
     uv = np.array([])
     for i in range(ans.shape[0]):
         for j in range(ans.shape[1]):
-            if (ans[i][j][1] != 0 and ans[i][j][0] != 0):
+            if (np.abs(ans[i][j][1] )>1 and np.abs(ans[i][j][0]) > 1):
                 uv = np.append(uv, ans[i][j][1])
                 uv = np.append(uv, ans[i][j][0])
                 pts = np.append(pts, j)
                 pts = np.append(pts, i)
     pts = pts.reshape(int(pts.shape[0] / 2), 2)
     uv = uv.reshape(int(uv.shape[0] / 2), 2)
+    print(np.median(uv, 0))
+    print(np.mean(uv, 0))
     displayOpticalFlow(im2, pts, uv)
+
+    # problem with code
+    # lk_params = dict(winSize=(15, 15),
+    #                  maxLevel=2,
+    #                  criteria=(cv2.TERM_CRITERIA_EPS | cv2.TERM_CRITERIA_COUNT,
+    #                            10, 0.03))
+    # p1, st, err=cv2.calcOpticalFlowPyrLK(np.float32(im1), np.float32(im2), pts,None, **lk_params)
 
 
 def hierarchicalkDemo(img_path):
@@ -190,6 +199,7 @@ def pyrLaplacianDemo(img_path):
     plt.show()
 
 
+
 def blendDemo():
     im1 = cv2.cvtColor(cv2.imread('input/sunset.jpg'), cv2.COLOR_BGR2RGB) / 255
     im2 = cv2.cvtColor(cv2.imread('input/cat.jpg'), cv2.COLOR_BGR2RGB) / 255
@@ -213,43 +223,42 @@ def blendDemo():
 def main():
     print("ID:", myID())
     #
-    # img_path = 'input/boxMan.jpg'
+    img_path = 'input/boxMan.jpg'
     # lkDemo(img_path)
 
-    # make a new warped image
+    # # make a new warped image
     # img_path = 'input/color1.jpg'
     # img_1 = cv2.cvtColor(cv2.imread(img_path), cv2.COLOR_BGR2GRAY)
-    # t = np.array([[1, 0, -.2],
-    #               [0, 1, -.1],
+    # t = np.array([[1, 0, 10],
+    #               [0, 1, -5],
     #               [0, 0, 1]], dtype=np.float)
     # img_2 = cv2.warpPerspective(img_1, t, img_1.shape[::-1])
     # plt.imshow(img_2)
     # plt.show()
-    # cv2.imwrite("Input/color2.jpg", img_2)
+    # cv2.imwrite("Input/color3.jpg", img_2)
 
 
 
 
-    img_path1 = 'input/boxMan.jpg'
-    # img_path2 = 'input/boxMan2.jpg'
-    #
+    # img_path1 = 'input/start1.jpg'
+    # img_path2 = 'input/start3.jpg'
     # lkpyrDemo(img_path1,img_path2)
-
+    # lkDemo(img_path1)
     # translationlkdemo(img_path1)
-    rigidlkdemo(img_path1)
+    # rigidlkdemo(img_path1)
     # hierarchicalkDemo(img_path)
     # compareLK(img_path)
     #
     # imageWarpingDemo(img_path)
-    #
+
     # pyrGaussianDemo('input/pyr_bit.jpg')
     # pyrLaplacianDemo('input/pyr_bit.jpg')
     # blendDemo()
     # img = cv2.cvtColor(cv2.imread(img_path), cv2.COLOR_BGR2GRAY)
     # createPyramids(img,5)
 
-    # img_path1 = 'input/color1.jpg'
-    # translationcorrdemo(img_path1)
+    img_path1 = 'input/color1.jpg'
+    translationcorrdemo(img_path1)
 
 
 
