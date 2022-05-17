@@ -168,16 +168,7 @@ def displayOpticalFlow(img: np.ndarray, pts: np.ndarray, uvs: np.ndarray):
 # ---------------------------------------------------------------------------
 # ------------------------ Image Alignment & Warping ------------------------
 # ---------------------------------------------------------------------------
-def translationcorrdemo(img_path):
-    img_1 = cv2.cvtColor(cv2.imread(img_path), cv2.COLOR_BGR2GRAY)
-    t = np.array([[1, 0, -2],
-                  [0, 1, 5],
-                  [0, 0, 1]], dtype=np.float)
-    img_2 = cv2.warpPerspective(img_1, t, img_1.shape[::-1])
-    st = time.time()
-    findTranslationCorr(img_1,img_2)
-    et = time.time()
-    print("Time: {:.4f}".format(et - st))
+
 
 
 
@@ -211,6 +202,19 @@ def rigidlkdemo(img_path):
     et = time.time()
     print("Time: {:.4f}".format(et - st))
     # print("mat\n", mat, "\nt\n", t)
+
+def translationcorrdemo(img_path):
+    img_1 = cv2.cvtColor(cv2.imread(img_path), cv2.COLOR_BGR2GRAY)
+    img_1 = cv2.resize(img_1, (0, 0), fx=.5, fy=0.5)
+    t = np.array([[1, 0, 25],
+                  [0, 1, -33],
+                  [0, 0, 1]], dtype=np.float)
+    img_2 = cv2.warpPerspective(img_1, t, img_1.shape[::-1])
+    st = time.time()
+    mat =findTranslationCorr(img_1.astype(np.float),img_2.astype(np.float))
+    et = time.time()
+    print("Time: {:.4f}".format(et - st))
+    print("mat\n", mat, "\nt\n", t)
 
 def imageWarpingDemo(img_path):
     """
@@ -299,7 +303,7 @@ def main():
     img_path = 'input/boxMan.jpg'
     # lkDemo(img_path)
     # hierarchicalkDemo(img_path)
-    compareLK(img_path)
+    # compareLK(img_path)
 
 
     # # make a new warped image
@@ -320,9 +324,10 @@ def main():
 
 
 
-    # translationlkdemo(img_path1)
+    # translationlkdemo(img_path)
     # rigidlkdemo(img_path1)
-    # translationcorrdemo(img_path1)
+    img_path = 'input/boxMan.jpg'
+    translationcorrdemo(img_path)
 
 
 
