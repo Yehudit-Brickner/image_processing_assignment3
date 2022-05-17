@@ -313,99 +313,110 @@ def warpImages(im1: np.ndarray, im2: np.ndarray, T: np.ndarray) -> np.ndarray:
     and the wrapped version of the image2 in the same figure.
     """
 
-    # forward
-    z=0
-    try:
-        M=np.zeros((3,im1.shape[0]*im1.shape[1]))
-        count=0
-        for i in range(im1.shape[0]):
-            for j in range(im1.shape[1]):
-                M[0][count] = i
-                M[1][count] = j
-                M[2][count] = 1
-                count+=1
+    # # forward
+    # z=0
+    # try:
+    #     # M=np.zeros((3,im1.shape[0]*im1.shape[1]))
+    #     # count=0
+    #     # for i in range(im1.shape[0]):
+    #     #     for j in range(im1.shape[1]):
+    #     #         M[0][count] = i
+    #     #         M[1][count] = j
+    #     #         M[2][count] = 1
+    #     #         count+=1
+    #     #
+    #     # m1= np.linalg.inv(T) @ M
+    #     # x=0
+    #     # y=0
+    #     # for num in range(m1.shape[1]):
+    #         # print(num)
+    #         # print( "row=",(num // im1.shape[0]), x)
+    #         # print("col=",num % im1.shape[1], y)
+    #     for i in range(im2.shape[0]):
+    #         for j in range(im2.shape[1]):
+    #             arr= np.array([i,j,1])
+    #
+    #             newarr=T@arr
+    #             # print(newarr)
+    #             x1 = np.floor(newarr[0]).astype(int)
+    #             x2 = np.ceil(newarr[0]).astype(int)
+    #             x3= newarr[0]%1
+    #             y1 = np.floor(newarr[1]).astype(int)
+    #             y2 = np.ceil(newarr[1]).astype(int)
+    #             y3 = newarr[1]%1
+    #             # x1 = np.floor(m1[0][num]).astype(int)
+    #             # x2 = np.ceil(m1[0][num]).astype(int)
+    #             # x3= m1[0][num]%1
+    #             # y1 = np.floor(m1[1][num]).astype(int)
+    #             # y2 = np.ceil(m1[1][num]).astype(int)
+    #             # y3 = m1[1][num] % 1
+    #             # if x1>=0 and y1>=0 and x1<im2.shape[0] and y1<im2.shape[1]:
+    #             #     im2[x1][y1]+= (1-x3) * (1-y3) * im1[x][y]
+    #             #
+    #             # if x2 >= 0 and y1 >= 0 and x2 < im2.shape[0] and y1 < im2.shape[1]:
+    #             #     im2[x2][y1] += x3 * (1-y3) * im1[x][y]
+    #             #
+    #             # if x1 >= 0 and y2 >= 0 and x1 < im2.shape[0] and y2 < im2.shape[1]:
+    #             #     im2[x1][y2] += (1-x3) * y3 * im1[x][y]
+    #             #
+    #             # if x2 >= 0 and y2 >= 0 and x2 < im2.shape[0] and y2 < im2.shape[1]:
+    #             #     im2[x2][y2] += x3 * y3 * im1[x][y]
+    #
+    #             if x1>=0 and y1>=0 and x1<im2.shape[0] and y1<im2.shape[1]:
+    #                 im2[x1][y1]+= x3 * y3 * im1[i][j]
+    #
+    #             if x2 >= 0 and y1 >= 0 and x2 < im2.shape[0] and y1 < im2.shape[1]:
+    #                 im2[x2][y1] += (1-x3) * y3 * im1[i][j]
+    #
+    #             if x1 >= 0 and y2 >= 0 and x1 < im2.shape[0] and y2 < im2.shape[1]:
+    #                 im2[x1][y2] += x3 * (1-y3) * im1[i][j]
+    #
+    #             if x2 >= 0 and y2 >= 0 and x2 < im2.shape[0] and y2 < im2.shape[1]:
+    #                 im2[x2][y2] += (1-x3) * (1-y3) * im1[i][j]
+    #
+    #
+    #             # y+=1
+    #             # if (y >= im1.shape[1]):
+    #             #     y = 0
+    #             #     x += 1
+    # except:
+    #     z=z+1
+    # print("caught  %d exceptions" %(z))
+    #
+    # plt.imshow(im2)
+    # plt.show()
+    # return im2
 
-        m1= np.linalg.inv(T) @ M
-        x=0
-        y=0
-        for num in range(m1.shape[1]):
-            # print(num)
-            # print( "row=",(num // im1.shape[0]), x)
-            # print("col=",num % im1.shape[1], y)
 
-            x1 = np.floor(m1[0][num]).astype(int)
-            x2 = np.ceil(m1[0][num]).astype(int)
-            x3= m1[0][num]%1
-            y1 = np.floor(m1[1][num]).astype(int)
-            y2 = np.ceil(m1[1][num]).astype(int)
-            y3 = m1[1][num] % 1
-            # if x1>=0 and y1>=0 and x1<im2.shape[0] and y1<im2.shape[1]:
-            #     im2[x1][y1]+= (1-x3) * (1-y3) * im1[x][y]
-            #
-            # if x2 >= 0 and y1 >= 0 and x2 < im2.shape[0] and y1 < im2.shape[1]:
-            #     im2[x2][y1] += x3 * (1-y3) * im1[x][y]
-            #
-            # if x1 >= 0 and y2 >= 0 and x1 < im2.shape[0] and y2 < im2.shape[1]:
-            #     im2[x1][y2] += (1-x3) * y3 * im1[x][y]
-            #
-            # if x2 >= 0 and y2 >= 0 and x2 < im2.shape[0] and y2 < im2.shape[1]:
-            #     im2[x2][y2] += x3 * y3 * im1[x][y]
 
+    # backward
+    new=np.zeros((im1.shape[0],im1.shape[1]))
+    m1 = np.linalg.inv(T)
+    for i in range(im2.shape[0]):
+        for j in range(im2.shape[1]):
+            arr= np.array([i,j,1])
+            newarr=m1@arr
+            x1 = np.floor(newarr[0]).astype(int)
+            x2 = np.ceil(newarr[0]).astype(int)
+            x3= newarr[0]%1
+            y1 = np.floor(newarr[1]).astype(int)
+            y2 = np.ceil(newarr[1]).astype(int)
+            y3 = newarr[1]%1
             if x1>=0 and y1>=0 and x1<im2.shape[0] and y1<im2.shape[1]:
-                im2[x1][y1]+= x3 * y3 * im1[x][y]
+                new[x1][y1]+= x3 * y3 * im2[i][j]
 
             if x2 >= 0 and y1 >= 0 and x2 < im2.shape[0] and y1 < im2.shape[1]:
-                im2[x2][y1] += (1-x3) * y3 * im1[x][y]
+                new[x2][y1] +=(1- x3) * y3 * im2[i][j]
 
             if x1 >= 0 and y2 >= 0 and x1 < im2.shape[0] and y2 < im2.shape[1]:
-                im2[x1][y2] += x3 * (1-y3) * im1[x][y]
+                new[x1][y2] += x3 * (1-y3) * im2[i][j]
 
             if x2 >= 0 and y2 >= 0 and x2 < im2.shape[0] and y2 < im2.shape[1]:
-                im2[x2][y2] += (1-x3) * (1-y3) * im1[x][y]
+                new[x2][y2] += (1-x3) * (1-y3) * im2[i][j]
 
-
-            y+=1
-            if (y >= im1.shape[1]):
-                y = 0
-                x += 1
-    except:
-        z=z+1
-    print("caught  %d exceptions" %(z))
-
-    plt.imshow(im2)
+    plt.imshow(new)
     plt.show()
-    return im2
-
-
-
-    # # backward
-    # new=np.zeros((im1.shape[0],im1.shape[1]))
-    # m1 = np.linalg.inv(T)
-    # for i in range(im2.shape[0]):
-    #     for j in range(im2.shape[1]):
-    #         arr= np.array([i,j,1])
-    #         newarr=m1@arr
-    #         x1 = np.floor(newarr[0]).astype(int)
-    #         x2 = np.ceil(newarr[0]).astype(int)
-    #         x3= newarr[0]
-    #         y1 = np.floor(newarr[1]).astype(int)
-    #         y2 = np.ceil(newarr[1]).astype(int)
-    #         y3 = newarr[1]
-    #         if x1>=0 and y1>=0 and x1<im2.shape[0] and y1<im2.shape[1]:
-    #             new[x1][y1]+= x3 * y3 * im2[i][j]
-    #
-    #         if x2 >= 0 and y1 >= 0 and x2 < im2.shape[0] and y1 < im2.shape[1]:
-    #             new[x2][y1] +=(1- x3) * y3 * im2[i][j]
-    #
-    #         if x1 >= 0 and y2 >= 0 and x1 < im2.shape[0] and y2 < im2.shape[1]:
-    #             new[x1][y2] += x3 * (1-y3) * im2[i][j]
-    #
-    #         if x2 >= 0 and y2 >= 0 and x2 < im2.shape[0] and y2 < im2.shape[1]:
-    #             new[x2][y2] += (1-x3) * (1-y3) * im2[i][j]
-    #
-    # plt.imshow(new)
-    # plt.show()
-    # return new
+    return new
 # ---------------------------------------------------------------------------
 # --------------------- Gaussian and Laplacian Pyramids ---------------------
 # ---------------------------------------------------------------------------

@@ -212,31 +212,58 @@ def imageWarpingDemo(img_path):
     :return:
     """
     print("Image Warping Demo")
+    #forward
+    # img_1 = cv2.cvtColor(cv2.imread(img_path), cv2.COLOR_BGR2GRAY)
+    # img_1 = cv2.resize(img_1, (0, 0), fx=.5, fy=0.5)
+    # t = np.array([[1, 0, 5],
+    #                [0, 1, 3],
+    #                [0, 0, 1]], dtype=np.float)
+    # # t2 = np.array(([np.cos(0.01), -np.sin(0.01), 0], [np.sin(0.01), np.cos(0.01), 0], [0, 0, 1]))
+    # # t = t @ t2
+    # img_2=cv2.warpPerspective(img_1, t, img_1.shape[::-1])
+    # new = np.zeros((img_1.shape[0],img_1.shape[1]))
+    # st = time.time()
+    # im2 = warpImages(img_1.astype(np.float),new.astype(np.float),t)
+    # et = time.time()
+    # print("Time: {:.4f}".format(et - st))
+    # f, ax = plt.subplots(1, 3)
+    # ax[0].set_title('my warp')
+    # ax[0].imshow(im2)
+    #
+    # ax[1].set_title('cv2 warp')
+    # ax[1].imshow(img_2)
+    #
+    # ax[2].set_title('diff')
+    # ax[2].imshow(img_2 - im2)
+    # plt.show()
+    # print("mse= ",MSE(img_2,im2))
 
+
+    #backward
     img_1 = cv2.cvtColor(cv2.imread(img_path), cv2.COLOR_BGR2GRAY)
     img_1 = cv2.resize(img_1, (0, 0), fx=.5, fy=0.5)
     t = np.array([[1, 0, 5],
-                   [0, 1, 3],
-                   [0, 0, 1]], dtype=np.float)
-    # t2 = np.array(([np.cos(0.5), -np.sin(0.5), 0], [np.sin(0.5), np.cos(0.5), 0], [0, 0, 1]))
-    # t = t1 @ t2
-    img_2=cv2.warpPerspective(img_1, t, img_1.shape[::-1])
-    new = np.zeros((img_1.shape[0],img_1.shape[1]))
+                  [0, 1, 3],
+                  [0, 0, 1]], dtype=np.float)
+    t2 = np.array(([np.cos(0.01), -np.sin(0.01), 0], [np.sin(0.01), np.cos(0.01), 0], [0, 0, 1]))
+    t = t @ t2
+    img_2 = cv2.warpPerspective(img_1, t, img_1.shape[::-1])
+    new = np.zeros((img_1.shape[0], img_1.shape[1]))
     st = time.time()
-    im2 = warpImages(img_1.astype(np.float),new.astype(np.float),t)
+    im2 = warpImages(img_1.astype(np.float), img_2.astype(np.float), t)
     et = time.time()
     print("Time: {:.4f}".format(et - st))
     f, ax = plt.subplots(1, 3)
-    ax[0].set_title('my warp')
+    ax[0].set_title('my unwarp')
     ax[0].imshow(im2)
 
-    ax[1].set_title('cv2 warp')
-    ax[1].imshow(img_2)
+    ax[1].set_title('orig')
+    ax[1].imshow(img_1)
 
     ax[2].set_title('diff')
-    ax[2].imshow(img_2 - im2)
+    ax[2].imshow(img_1 - im2)
     plt.show()
-    print("mse= ",MSE(img_2,im2))
+    print("mse= ", MSE(img_1, im2))
 
 # ---------------------------------------------------------------------------
 # --------------------- Gaussian and Laplacian Pyramids ---------------------
