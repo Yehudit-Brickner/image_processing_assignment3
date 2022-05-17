@@ -105,7 +105,7 @@ def hierarchicalkDemo(img_path):
     # p1, st, err=cv2.calcOpticalFlowPyrLK(np.float32(im1), np.float32(im2), pts,None, **lk_params)
 
 
-pass
+
 
 
 def compareLK(img_path):
@@ -174,6 +174,7 @@ def displayOpticalFlow(img: np.ndarray, pts: np.ndarray, uvs: np.ndarray):
 
 def translationlkdemo(img_path):
     img_1 = cv2.cvtColor(cv2.imread(img_path), cv2.COLOR_BGR2GRAY)
+    img_1 = cv2.resize(img_1, (0, 0), fx=.5, fy=0.5)
     t = np.array([[1, 0, -.2],
                   [0, 1, -.4],
                   [0, 0, 1]], dtype=np.float)
@@ -183,7 +184,18 @@ def translationlkdemo(img_path):
     et = time.time()
     print("Time: {:.4f}".format(et - st))
     print("mat\n",mat ,"\nt\n", t)
+    new = cv2.warpPerspective(img_1, mat, img_1.shape[::-1])
+    f, ax = plt.subplots(1, 3)
+    ax[0].set_title('img2 given transformation')
+    ax[0].imshow(img_2, cmap='gray')
 
+    ax[1].set_title('img2 found transformation')
+    ax[1].imshow(new, cmap='gray')
+
+    ax[2].set_title('diff')
+    ax[2].imshow(img_2 - new, cmap='gray')
+
+    plt.show()
 
 
 def rigidlkdemo(img_path):
@@ -213,8 +225,21 @@ def translationcorrdemo(img_path):
     st = time.time()
     mat =findTranslationCorr(img_1.astype(np.float),img_2.astype(np.float))
     et = time.time()
+
     print("Time: {:.4f}".format(et - st))
     print("mat\n", mat, "\nt\n", t)
+    new = cv2.warpPerspective(img_1, mat, img_1.shape[::-1])
+    f, ax = plt.subplots(1, 3)
+    ax[0].set_title('img2 given transformation')
+    ax[0].imshow(img_2, cmap='gray')
+
+    ax[1].set_title('img2 found transformation')
+    ax[1].imshow(new, cmap='gray')
+
+    ax[2].set_title('diff')
+    ax[2].imshow(img_2-new, cmap='gray')
+
+    plt.show()
 
 def imageWarpingDemo(img_path):
     """
@@ -324,10 +349,10 @@ def main():
 
 
 
-    # translationlkdemo(img_path)
+    translationlkdemo(img_path)
     # rigidlkdemo(img_path1)
-    img_path = 'input/boxMan.jpg'
-    translationcorrdemo(img_path)
+    img_path = 'input/color1.jpg'
+    # translationcorrdemo(img_path)
 
 
 
