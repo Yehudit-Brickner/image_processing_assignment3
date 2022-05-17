@@ -30,22 +30,65 @@ def lkDemo(img_path):
 
     displayOpticalFlow(img_2, pts, uv)
 
+#
+# def lkpyrDemo(img_path1):
+#     print("lk Pyramid demo")
+#     im1 = cv2.cvtColor(cv2.imread(img_path1), cv2.COLOR_BGR2GRAY)
+#     # im1 = cv2.resize(im1, (0, 0), fx=.5, fy=0.5)
+#     t = np.array([[1, 0, -.2],
+#                   [0, 1, -.1],
+#                   [0, 0, 1]], dtype=np.float)
+#     im2 = cv2.warpPerspective(im1, t, im1.shape[::-1])
+#
+#     ans = opticalFlowPyrLK(im1.astype(np.float), im2.astype(np.float), 4, 20, 5)
+#
+#     pts = np.array([])
+#     uv = np.array([])
+#     for i in range(ans.shape[0]):
+#         for j in range(ans.shape[1]):
+#             if ans[i][j][1] !=0 and ans[i][j][0]!=0:
+#                 uv = np.append(uv, ans[i][j][0])
+#                 uv = np.append(uv, ans[i][j][1])
+#                 pts = np.append(pts, j)
+#                 pts = np.append(pts, i)
+#     pts = pts.reshape(int(pts.shape[0] / 2), 2)
+#     uv = uv.reshape(int(uv.shape[0] / 2), 2)
+#     print(np.median(uv, 0))
+#     print(np.mean(uv, 0))
+#     displayOpticalFlow(im2, pts, uv)
+#
+#     # problem with code
+#     # lk_params = dict(winSize=(15, 15),
+#     #                  maxLevel=2,
+#     #                  criteria=(cv2.TERM_CRITERIA_EPS | cv2.TERM_CRITERIA_COUNT,
+#     #                            10, 0.03))
+#     # p1, st, err=cv2.calcOpticalFlowPyrLK(np.float32(im1), np.float32(im2), pts,None, **lk_params)
 
-def lkpyrDemo(img_path1, img_path2):
-    im1 = cv2.cvtColor(cv2.imread(img_path1), cv2.COLOR_BGR2GRAY)
-    im2 = cv2.cvtColor(cv2.imread(img_path2), cv2.COLOR_BGR2GRAY)
 
-    # plt.imshow(im1-im2)
-    # plt.show()
+def hierarchicalkDemo(img_path):
+    """
+    ADD TEST
+    :param img_path: Image input
+    :return:
+    """
+    print("Hierarchical LK Demo")
 
-    ans = opticalFlowPyrLK(im1, im2, 4, 10, 5)
+    im1 = cv2.cvtColor(cv2.imread(img_path), cv2.COLOR_BGR2GRAY)
+    im1 = cv2.resize(im1, (0, 0), fx=.5, fy=0.5)
+    t = np.array([[1, 0, -.2],
+                  [0, 1, -.1],
+                  [0, 0, 1]], dtype=np.float)
+    im2 = cv2.warpPerspective(im1, t, im1.shape[::-1])
+
+    ans = opticalFlowPyrLK(im1.astype(np.float), im2.astype(np.float), 4, 20, 5)
+
     pts = np.array([])
     uv = np.array([])
     for i in range(ans.shape[0]):
         for j in range(ans.shape[1]):
-            if (np.abs(ans[i][j][1] )>1 and np.abs(ans[i][j][0]) > 1):
-                uv = np.append(uv, ans[i][j][1])
+            if ans[i][j][1] != 0 and ans[i][j][0] != 0:
                 uv = np.append(uv, ans[i][j][0])
+                uv = np.append(uv, ans[i][j][1])
                 pts = np.append(pts, j)
                 pts = np.append(pts, i)
     pts = pts.reshape(int(pts.shape[0] / 2), 2)
@@ -62,15 +105,7 @@ def lkpyrDemo(img_path1, img_path2):
     # p1, st, err=cv2.calcOpticalFlowPyrLK(np.float32(im1), np.float32(im2), pts,None, **lk_params)
 
 
-def hierarchicalkDemo(img_path):
-    """
-    ADD TEST
-    :param img_path: Image input
-    :return:
-    """
-    print("Hierarchical LK Demo")
-
-    pass
+pass
 
 
 def compareLK(img_path):
@@ -82,7 +117,41 @@ def compareLK(img_path):
     """
     print("Compare LK & Hierarchical LK")
 
-    pass
+    im1 = cv2.cvtColor(cv2.imread(img_path), cv2.COLOR_BGR2GRAY)
+    im1 = cv2.resize(im1, (0, 0), fx=.5, fy=0.5)
+    t = np.array([[1, 0, -.2],
+                  [0, 1, -.1],
+                  [0, 0, 1]], dtype=np.float)
+    im2 = cv2.warpPerspective(im1, t, im1.shape[::-1])
+
+    pts,uv=opticalFlow(im1.astype(np.float), im2.astype(np.float), step_size=20, win_size=5)
+
+
+
+
+    ans = opticalFlowPyrLK(im1.astype(np.float), im2.astype(np.float), 4, 20, 5)
+    ptspyr = np.array([])
+    uvpyr = np.array([])
+    for i in range(ans.shape[0]):
+        for j in range(ans.shape[1]):
+            if ans[i][j][1] != 0 and ans[i][j][0] != 0:
+                uvpyr = np.append(uvpyr, ans[i][j][0])
+                uvpyr = np.append(uvpyr, ans[i][j][1])
+                ptspyr = np.append(ptspyr, j)
+                ptspyr = np.append(ptspyr, i)
+    ptspyr = ptspyr.reshape(int(ptspyr.shape[0] / 2), 2)
+    uvpyr = uvpyr.reshape(int(uvpyr.shape[0] / 2), 2)
+
+    f, ax = plt.subplots(1,2)
+    ax[0].set_title('reg LK')
+    ax[0].imshow(im2, cmap='gray')
+    ax[0].quiver(pts[:, 0], pts[:, 1], uv[:, 0], uv[:, 1], color='r')
+    ax[1].set_title('Pyr LK')
+    ax[1].imshow(im2, cmap='gray')
+    ax[1].quiver(ptspyr[:, 0], ptspyr[:, 1], uvpyr[:, 0], uvpyr[:, 1], color='r')
+    plt.show()
+
+
 
 
 def displayOpticalFlow(img: np.ndarray, pts: np.ndarray, uvs: np.ndarray):
@@ -225,6 +294,9 @@ def main():
     #
     img_path = 'input/boxMan.jpg'
     # lkDemo(img_path)
+    # hierarchicalkDemo(img_path)
+    compareLK(img_path)
+
 
     # # make a new warped image
     # img_path = 'input/color1.jpg'
@@ -240,25 +312,26 @@ def main():
 
 
 
-    # img_path1 = 'input/start1.jpg'
-    # img_path2 = 'input/start3.jpg'
-    # lkpyrDemo(img_path1,img_path2)
-    # lkDemo(img_path1)
+
+
+
+
     # translationlkdemo(img_path1)
     # rigidlkdemo(img_path1)
-    # hierarchicalkDemo(img_path)
-    # compareLK(img_path)
+    # translationcorrdemo(img_path1)
+
+
+
+
+
     #
     # imageWarpingDemo(img_path)
 
-    # pyrGaussianDemo('input/pyr_bit.jpg')
-    # pyrLaplacianDemo('input/pyr_bit.jpg')
-    # blendDemo()
-    # img = cv2.cvtColor(cv2.imread(img_path), cv2.COLOR_BGR2GRAY)
-    # createPyramids(img,5)
+    pyrGaussianDemo('input/pyr_bit.jpg')
+    pyrLaplacianDemo('input/pyr_bit.jpg')
+    blendDemo()
 
-    img_path1 = 'input/color1.jpg'
-    translationcorrdemo(img_path1)
+
 
 
 

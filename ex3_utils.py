@@ -65,15 +65,19 @@ def opticalFlow(im1: np.ndarray, im2: np.ndarray, step_size=10, win_size=5) -> (
                 AT = A.T
                 ATA = AT@A
 
-                # ATA=[[(Ix * Ix).sum(), (Ix * Iy).sum()],
-                #     [(Ix * Iy).sum(), (Iy * Iy).sum()]]
+                # ATA=np.array([[(Ix[i-rep : i+rep+1, j-rep : j+rep+1] * Ix[i-rep : i+rep+1, j-rep : j+rep+1]).sum(), (Ix[i-rep : i+rep+1, j-rep : j+rep+1] * Iy[i-rep : i+rep+1, j-rep : j+rep+1]).sum()],
+                #     [(Ix[i-rep : i+rep+1, j-rep : j+rep+1] * Iy[i-rep : i+rep+1, j-rep : j+rep+1]).sum(), (Iy[i-rep : i+rep+1, j-rep : j+rep+1] * Iy[i-rep : i+rep+1, j-rep : j+rep+1]).sum()]])
+                #
+                # ATB = np.array([(Ix[i-rep : i+rep+1, j-rep : j+rep+1] * It[i-rep : i+rep+1, j-rep : j+rep+1]).sum(), (Iy[i-rep : i+rep+1, j-rep : j+rep+1] * It[i-rep : i+rep+1, j-rep : j+rep+1]).sum()])
+                # ATB=ATB*-1
                 e, e1 = np.linalg.eig(ATA)
                 e = np.sort(e)
                 # make sure the eigen values are ok
                 if  e[0] > 1 and e[1]/e[0] < 100:
                     v = np.linalg.inv(ATA) @ (AT @ B)
-                    n = [v[0], v[1]]
-                    # n = [-v[0], -v[1]]
+                    # v = np.linalg.inv(ATA) @ (ATB)
+                    # n = [v[0], v[1]]
+                    n = [-v[0], -v[1]]
                     o=[j,i]
                     origpoints = np.append(origpoints, o)
                     newpoints = np.append(newpoints,n)
@@ -104,8 +108,17 @@ def opticalFlowPyrLK(img1: np.ndarray, img2: np.ndarray, k: int, stepSize: int, 
     :return: A 3d array, with a shape of (m, n, 2),
     where the first channel holds U, and the second V.
     """
-    A = gaussianPyr(img1,k)
-    B = gaussianPyr(img2,k)
+    A=[]
+    B=[]
+    A.append(img1)
+    B.append(img2)
+
+    for i in range(k-1):
+        A.append(cv2.pyrDown(A[-1], (A[-1].shape[0] // 2, A[-1].shape[1] // 2)))
+        B.append(cv2.pyrDown(B[-1], (B[-1].shape[0] // 2, B[-1].shape[1] // 2)))
+    # A = gaussianPyr(img1,k)
+    # B = gaussianPyr(img2,k)
+
 
     #try1
     # a = A[0].shape[0]
@@ -165,10 +178,10 @@ def opticalFlowPyrLK(img1: np.ndarray, img2: np.ndarray, k: int, stepSize: int, 
         change=np.zeros((a,b,2))
         old, new = opticalFlow(A[i], B[i], step_size=stepSize, win_size=winSize)
         for x in range(len(old)):
-            b=old[x][0].astype(int)
-            a=old[x][1].astype(int)
-            c=new[x][0]
-            d=new[x][1]
+            b=old[x][0].astype(int) # height of pix
+            a=old[x][1].astype(int) # width of pix
+            c=new[x][0] # u of tran
+            d=new[x][1] # v of tran
             change[a][b][0]=c
             change[a][b][1]=d
         C.append(change)
@@ -176,15 +189,20 @@ def opticalFlowPyrLK(img1: np.ndarray, img2: np.ndarray, k: int, stepSize: int, 
 
     for x in range(-1,-k,-1):
         y = x - 1
-        print("x=",x, " y=", y)
-        print("sumx",(C[x]*C[x]).sum())
-        print("sumy",(C[y] * C[y]).sum())
+        # print("x=",x, " y=", y)
+        # print("sumx",(C[x]*C[x]).sum())
+        # print("sumy",(C[y] * C[y]).sum())
         for i in range(C[x].shape[0]):
             for j in range(C[x].shape[1]):
                 C[y][i*2][j*2][0] += (C[x][i][j][0]*2)
                 C[y][i*2][j*2][1] += (C[x][i][j][1]*2)
-        print("sumy",(C[y] * C[y]).sum())
-    print((C[0] * C[0]).sum())
+    #     print("sumy",(C[y] * C[y]).sum())
+    # print((C[0] * C[0]).sum())
+
+    # plt.imshow(C[0][:,:,0])
+    # plt.show()
+    # plt.imshow(C[0][:,:,1])
+    # plt.show()
     return C[0]
 
 
