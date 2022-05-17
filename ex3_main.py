@@ -1,9 +1,12 @@
 import cv2
+import numpy as np
 
 from ex3_utils import *
 import time
 
 
+def MSE(a: np.ndarray, b: np.ndarray) -> float:
+    return np.square(a - b).mean()
 # ---------------------------------------------------------------------------
 # ------------------------ Lucas Kanade optical flow ------------------------
 # ---------------------------------------------------------------------------
@@ -29,40 +32,6 @@ def lkDemo(img_path):
     print(np.mean(uv,0))
 
     displayOpticalFlow(img_2, pts, uv)
-
-#
-# def lkpyrDemo(img_path1):
-#     print("lk Pyramid demo")
-#     im1 = cv2.cvtColor(cv2.imread(img_path1), cv2.COLOR_BGR2GRAY)
-#     # im1 = cv2.resize(im1, (0, 0), fx=.5, fy=0.5)
-#     t = np.array([[1, 0, -.2],
-#                   [0, 1, -.1],
-#                   [0, 0, 1]], dtype=np.float)
-#     im2 = cv2.warpPerspective(im1, t, im1.shape[::-1])
-#
-#     ans = opticalFlowPyrLK(im1.astype(np.float), im2.astype(np.float), 4, 20, 5)
-#
-#     pts = np.array([])
-#     uv = np.array([])
-#     for i in range(ans.shape[0]):
-#         for j in range(ans.shape[1]):
-#             if ans[i][j][1] !=0 and ans[i][j][0]!=0:
-#                 uv = np.append(uv, ans[i][j][0])
-#                 uv = np.append(uv, ans[i][j][1])
-#                 pts = np.append(pts, j)
-#                 pts = np.append(pts, i)
-#     pts = pts.reshape(int(pts.shape[0] / 2), 2)
-#     uv = uv.reshape(int(uv.shape[0] / 2), 2)
-#     print(np.median(uv, 0))
-#     print(np.mean(uv, 0))
-#     displayOpticalFlow(im2, pts, uv)
-#
-#     # problem with code
-#     # lk_params = dict(winSize=(15, 15),
-#     #                  maxLevel=2,
-#     #                  criteria=(cv2.TERM_CRITERIA_EPS | cv2.TERM_CRITERIA_COUNT,
-#     #                            10, 0.03))
-#     # p1, st, err=cv2.calcOpticalFlowPyrLK(np.float32(im1), np.float32(im2), pts,None, **lk_params)
 
 
 def hierarchicalkDemo(img_path):
@@ -103,9 +72,6 @@ def hierarchicalkDemo(img_path):
     #                  criteria=(cv2.TERM_CRITERIA_EPS | cv2.TERM_CRITERIA_COUNT,
     #                            10, 0.03))
     # p1, st, err=cv2.calcOpticalFlowPyrLK(np.float32(im1), np.float32(im2), pts,None, **lk_params)
-
-
-
 
 
 def compareLK(img_path):
@@ -154,8 +120,6 @@ def compareLK(img_path):
     ax[2].quiver(pts[:, 0], pts[:, 1], uv[:, 0], uv[:, 1], color='r')
     ax[2].quiver(ptspyr[:, 0], ptspyr[:, 1], uvpyr[:, 0], uvpyr[:, 1], color='g')
     plt.show()
-
-
 
 
 def displayOpticalFlow(img: np.ndarray, pts: np.ndarray, uvs: np.ndarray):
@@ -249,8 +213,30 @@ def imageWarpingDemo(img_path):
     """
     print("Image Warping Demo")
 
-    pass
+    img_1 = cv2.cvtColor(cv2.imread(img_path), cv2.COLOR_BGR2GRAY)
+    img_1 = cv2.resize(img_1, (0, 0), fx=.5, fy=0.5)
+    t = np.array([[1, 0, 5],
+                   [0, 1, 3],
+                   [0, 0, 1]], dtype=np.float)
+    # t2 = np.array(([np.cos(0.5), -np.sin(0.5), 0], [np.sin(0.5), np.cos(0.5), 0], [0, 0, 1]))
+    # t = t1 @ t2
+    img_2=cv2.warpPerspective(img_1, t, img_1.shape[::-1])
+    new = np.zeros((img_1.shape[0],img_1.shape[1]))
+    st = time.time()
+    im2 = warpImages(img_1.astype(np.float),new.astype(np.float),t)
+    et = time.time()
+    print("Time: {:.4f}".format(et - st))
+    f, ax = plt.subplots(1, 3)
+    ax[0].set_title('my warp')
+    ax[0].imshow(im2)
 
+    ax[1].set_title('cv2 warp')
+    ax[1].imshow(img_2)
+
+    ax[2].set_title('diff')
+    ax[2].imshow(img_2 - im2)
+    plt.show()
+    print("mse= ",MSE(img_2,im2))
 
 # ---------------------------------------------------------------------------
 # --------------------- Gaussian and Laplacian Pyramids ---------------------
@@ -326,6 +312,8 @@ def main():
     print("ID:", myID())
     #
     img_path = 'input/boxMan.jpg'
+
+    imageWarpingDemo(img_path)
     # lkDemo(img_path)
     # hierarchicalkDemo(img_path)
     # compareLK(img_path)
@@ -349,7 +337,7 @@ def main():
 
 
 
-    translationlkdemo(img_path)
+    # translationlkdemo(img_path)
     # rigidlkdemo(img_path1)
     img_path = 'input/color1.jpg'
     # translationcorrdemo(img_path)
