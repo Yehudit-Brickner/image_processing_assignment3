@@ -226,7 +226,7 @@ def findTranslationCorr(im1: np.ndarray, im2: np.ndarray) -> np.ndarray:
     :param im2: image 1 after Translation.
     :return: Translation matrix by correlation.
     """
-    win =7
+    win =13
     pad= win//2
     im1pad = cv2.copyMakeBorder(im1, pad, pad, pad, pad, cv2.BORDER_REPLICATE, None, value=0)
     im2pad = cv2.copyMakeBorder(im2, pad, pad, pad, pad, cv2.BORDER_REPLICATE, None, value=0)
@@ -242,14 +242,12 @@ def findTranslationCorr(im1: np.ndarray, im2: np.ndarray) -> np.ndarray:
         for y in range(len(J)):
             windowa = im1[I[x] - pad:I[x] + pad + 1, J[y] - pad:J[y] + pad + 1]
             aa=windowa.flatten()
-            a = windowa.reshape(1, win * win)
             big = [(np.array([0]), 0, 0)]
             for i in range(0,im2.shape[0]):
                 for j in range(0,im2.shape[1]):
                     if (i+pad+win)<im2pad.shape[0] and (j+pad+win)<im2pad.shape[1] :
                         windowb= im2pad[i+pad:i+pad+win, j+pad:j+pad+win]
                         bb=windowb.flatten()
-                        b=windowb.reshape(1, win*win)
                         top=np.correlate(aa,bb)
                         bottom=np.correlate(aa,aa)+np.correlate(bb,bb)
                         corr =top/bottom
@@ -300,7 +298,111 @@ def findRigidCorr(im1: np.ndarray, im2: np.ndarray) -> np.ndarray:
     :param im2: image 1 after Rigid.
     :return: Rigid matrix by correlation.
     """
-    pass
+    win = 5
+    pad = win // 2
+
+    im2pad = cv2.copyMakeBorder(im2, pad, pad, pad, pad, cv2.BORDER_REPLICATE, None, value=0)
+    I = []
+    J = []
+    for x in range(1, 5):
+        I.append((im1.shape[0] // 5) * x)
+        J.append((im1.shape[1] // 5) * x)
+
+    corr_listt = [(np.array([0]), 0, 0)]
+    for x in range(len(I)):
+        for y in range(len(J)):
+            windowa = im1[I[x] - pad:I[x] + pad + 1, J[y] - pad:J[y] + pad + 1]
+            aa = windowa.flatten()
+            big = [(np.array([0]), 0, 0)]
+            for i in range(0, im2.shape[0]):
+                for j in range(0, im2.shape[1]):
+                    if (i + pad + win) < im2pad.shape[0] and (j + pad + win) < im2pad.shape[1]:
+                        windowb = im2pad[i + pad:i + pad + win, j + pad:j + pad + win]
+                        bb = windowb.flatten()
+                        top = np.correlate(aa, bb)
+                        bottom = np.correlate(aa, aa) + np.correlate(bb, bb)
+                        corr = top / bottom
+                        if corr > big[0][0]:
+                            big.clear()
+                            big.insert(0, (corr, i, j))
+                        elif corr == big[0][0]:
+                            big.insert(0, (corr, i, j))
+            if big[0][0][0] > corr_listt[0][0][0]:
+                corr_listt.clear()
+                for m in range(len(big)):
+                    corr_listt.append((big[m], (I[x], J[y])))
+            if big[0][0][0] == corr_listt[0][0][0]:
+                for m in range(len(big)):
+                    corr_listt.append((big[m], (I[x], J[y])))
+
+
+
+
+    spot=-1
+    diff=float("inf")
+    print(len(corr_listt))
+    for n in range(len(corr_listt)):
+        print(n)
+        x =  corr_listt[n][1][0] - corr_listt[n][0][1]
+        y = corr_listt[n][1][1] - corr_listt[n][0][2]
+        if(y!=0):
+            theta= np.arctan(np.abs(x) / np.abs(y))
+        else:
+            theta =0
+        print("theata=", theta, "x=", x,"y=",y)
+        t = np.array([[np.cos(theta), -np.sin(theta), 0],
+                       [np.sin(theta), np.cos(theta), 0],
+                       [0, 0, 1]], dtype=np.float)
+        print("mat=",t)
+        new= cv2.warpPerspective(im1, t,im1.shape[::-1])
+        d = ((im2 - new) ** 2).sum()
+        if d<diff:
+            diff=d
+            spot=n
+        if diff==0:
+            break
+    print("finished loop")
+    print("diff=", diff, "spot=", spot)
+    x = corr_listt[spot][1][0] - corr_listt[spot][0][1]
+    y = corr_listt[spot][1][1] - corr_listt[spot][0][2]
+    if y!=0:
+        theta = np.arctan(np.abs(x) /np.abs(y))
+    else:
+        theta=0
+    print("theata=", theta, "x=", x,"y=",y)
+    t = np.array([[np.cos(theta), -np.sin(theta), 0],
+                  [np.sin(theta), np.cos(theta), 0],
+                  [0, 0, 1]], dtype=np.float)
+    print("mat=",t)
+    return (t)
+
+
+    # dif = float("inf")
+    # spot = -1
+    # print(len(corr_listt))
+    # for x in range(len(corr_listt)):
+    #
+    #     t1 = corr_listt[x][1][0] - corr_listt[x][0][1]
+    #     t2 = corr_listt[x][1][1] - corr_listt[x][0][2]
+    #
+    #     t = np.array([[1, 0, t1],
+    #                   [0, 1, t2],
+    #                   [0, 0, 1]], dtype=np.float)
+    #     new = cv2.warpPerspective(im1, t, im1.shape[::-1])
+    #     d = ((im2 - new) ** 2).sum()
+    #     if d < dif:
+    #         dif = d
+    #         spot = x
+    #         if dif == 0:
+    #             break
+    # print("diff=", dif, "spot=", spot)
+    #
+    # t1 = corr_listt[spot][1][0] - corr_listt[spot][0][1]
+    # t2 = corr_listt[spot][1][1] - corr_listt[spot][0][2]
+    # t = np.array([[1, 0, t1],
+    #               [0, 1, t2],
+    #               [0, 0, 1]], dtype=np.float)
+    # return t
 
 
 def warpImages(im1: np.ndarray, im2: np.ndarray, T: np.ndarray) -> np.ndarray:
