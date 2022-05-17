@@ -116,61 +116,7 @@ def opticalFlowPyrLK(img1: np.ndarray, img2: np.ndarray, k: int, stepSize: int, 
     for i in range(k-1):
         A.append(cv2.pyrDown(A[-1], (A[-1].shape[0] // 2, A[-1].shape[1] // 2)))
         B.append(cv2.pyrDown(B[-1], (B[-1].shape[0] // 2, B[-1].shape[1] // 2)))
-    # A = gaussianPyr(img1,k)
-    # B = gaussianPyr(img2,k)
 
-
-    #try1
-    # a = A[0].shape[0]
-    # b = A[0].shape[1]
-    #
-    # change=np.zeros((a,b,2))
-    # for i in range(-1,-k-1,-1):
-    #     print("i=", i, "k=", k)
-    #     old, new = opticalFlow(A[i], B[i], step_size=stepSize, win_size=winSize)
-    #     for x in range(len(old)):
-    #         a = old[x][0].astype(int)
-    #         a1 = a*(2**(k+i)) # placing in the correct spot in change
-    #         b = old[x][1].astype(int)
-    #         b1 = b * (2**(k+i)) # placing in the correct spot in change
-    #         c = 2 * new[x][0]
-    #         d = 2 * new[x][1]
-    #         change[b1][a1][0] += c
-    #         change[b1][a1][1] += d
-    # return change
-
-    #try2
-    # for i in range(-1,-k-1,-1):
-    #     print("i=", i, "k=", k)
-    #     old, new = opticalFlow(A[i], B[i], step_size=stepSize, win_size=winSize)
-    #     m = A[0].shape[0]
-    #     n = A[0].shape[1]
-    #     changenew = np.zeros((m, n, 2))
-    #     for x in range(len(old)):
-    #         a = old[x][0].astype(int)
-    #         a = a*(2**(k+i)) # placing in the correct spot in change
-    #         b = old[x][1].astype(int)
-    #         b = b * (2**(k+i)) # placing in the correct spot in change
-    #         c = 2 * new[x][0]
-    #         d = 2 * new[x][1]
-    #         changenew[b][a][0] += c
-    #         changenew[b][a][1] += d
-    #
-    #         if i!=-1:
-    #            for m in range(changeold.shape[0]) :
-    #                for n in range(changeold.shape[1] ):
-    #                    if m*2<changenew.shape[0] and n*2 <changenew.shape[1]:
-    #                         changenew[m*2,n*2]+=changeold[m,n]
-    #
-    #     changeold=changenew
-    #  return chengeold
-
-    # for i in range(len(A)):
-    #     a = A[i].shape[0]
-    #     b = A[i].shape[1]
-    #     C.append(np.zeros((a,b,2)))
-
-    #try3
     C = []
     for i in range(len(A)):
         a = A[i].shape[0]
@@ -186,23 +132,13 @@ def opticalFlowPyrLK(img1: np.ndarray, img2: np.ndarray, k: int, stepSize: int, 
             change[a][b][1]=d
         C.append(change)
 
-
     for x in range(-1,-k,-1):
         y = x - 1
-        # print("x=",x, " y=", y)
-        # print("sumx",(C[x]*C[x]).sum())
-        # print("sumy",(C[y] * C[y]).sum())
         for i in range(C[x].shape[0]):
             for j in range(C[x].shape[1]):
                 C[y][i*2][j*2][0] += (C[x][i][j][0]*2)
                 C[y][i*2][j*2][1] += (C[x][i][j][1]*2)
-    #     print("sumy",(C[y] * C[y]).sum())
-    # print((C[0] * C[0]).sum())
 
-    # plt.imshow(C[0][:,:,0])
-    # plt.show()
-    # plt.imshow(C[0][:,:,1])
-    # plt.show()
     return C[0]
 
 

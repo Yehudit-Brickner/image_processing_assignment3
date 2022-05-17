@@ -119,8 +119,8 @@ def compareLK(img_path):
 
     im1 = cv2.cvtColor(cv2.imread(img_path), cv2.COLOR_BGR2GRAY)
     im1 = cv2.resize(im1, (0, 0), fx=.5, fy=0.5)
-    t = np.array([[1, 0, -.2],
-                  [0, 1, -.1],
+    t = np.array([[1, 0, -0.2],
+                  [0, 1, -0.1],
                   [0, 0, 1]], dtype=np.float)
     im2 = cv2.warpPerspective(im1, t, im1.shape[::-1])
 
@@ -142,13 +142,17 @@ def compareLK(img_path):
     ptspyr = ptspyr.reshape(int(ptspyr.shape[0] / 2), 2)
     uvpyr = uvpyr.reshape(int(uvpyr.shape[0] / 2), 2)
 
-    f, ax = plt.subplots(1,2)
+    f, ax = plt.subplots(1,3)
     ax[0].set_title('reg LK')
     ax[0].imshow(im2, cmap='gray')
     ax[0].quiver(pts[:, 0], pts[:, 1], uv[:, 0], uv[:, 1], color='r')
     ax[1].set_title('Pyr LK')
     ax[1].imshow(im2, cmap='gray')
     ax[1].quiver(ptspyr[:, 0], ptspyr[:, 1], uvpyr[:, 0], uvpyr[:, 1], color='r')
+    ax[2].set_title('overlap')
+    ax[2].imshow(im2, cmap='gray')
+    ax[2].quiver(pts[:, 0], pts[:, 1], uv[:, 0], uv[:, 1], color='r')
+    ax[2].quiver(ptspyr[:, 0], ptspyr[:, 1], uvpyr[:, 0], uvpyr[:, 1], color='g')
     plt.show()
 
 
@@ -327,9 +331,9 @@ def main():
     #
     # imageWarpingDemo(img_path)
 
-    pyrGaussianDemo('input/pyr_bit.jpg')
-    pyrLaplacianDemo('input/pyr_bit.jpg')
-    blendDemo()
+    # pyrGaussianDemo('input/pyr_bit.jpg')
+    # pyrLaplacianDemo('input/pyr_bit.jpg')
+    # blendDemo()
 
 
 
