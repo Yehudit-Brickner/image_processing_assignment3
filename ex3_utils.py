@@ -40,60 +40,61 @@ def opticalFlow(im1: np.ndarray, im2: np.ndarray, step_size=10, win_size=5) -> (
     """
 
     ker = np.array([[1, 0, -1]])
-    rep = int(np.floor(win_size/2))
+    # make the derivative of x y and diff
     Ix = cv2.filter2D(im2, -1, ker, borderType=cv2.BORDER_REPLICATE)
     Iy = cv2.filter2D(im2, -1, ker.T, borderType=cv2.BORDER_REPLICATE)
     It=im2-im1
-    z=0
+
+    rep = win_size//2
+
     origpoints = np.array([])
     newpoints = np.array([])
     start= int(np.floor(win_size/2))
-
+    # running over the images in steps of step_size =  making a grid of the image
+    # and taking the middle of the grid to be the middle of the "window" later on
     for i in range(start,im1.shape[0]-start, step_size):
         for j in range(start, im1.shape[1]-start,step_size):
-            try:
-                # find the u and v for the best matched area
-                B = -It[i-rep : i+rep+1, j-rep : j+rep+1]
-                B = B.reshape(win_size**2, 1)
-                A1 = Ix[i-rep : i+rep+1, j-rep : j+rep+1].flatten()
-                A2 = Iy[i-rep : i+rep+1, j-rep : j+rep+1].flatten()
-                # A = np.stack((A1,A2))
-                A = np.array([])
-                for x in range(len(A1)):
-                    A = np.append(A,A1[x])
-                    A = np.append(A,A2[x])
-                A = A.reshape(win_size**2,2)
-                AT = A.T
-                ATA = AT@A
 
-                # ATA=np.array([[(Ix[i-rep : i+rep+1, j-rep : j+rep+1] * Ix[i-rep : i+rep+1, j-rep : j+rep+1]).sum(), (Ix[i-rep : i+rep+1, j-rep : j+rep+1] * Iy[i-rep : i+rep+1, j-rep : j+rep+1]).sum()],
-                #     [(Ix[i-rep : i+rep+1, j-rep : j+rep+1] * Iy[i-rep : i+rep+1, j-rep : j+rep+1]).sum(), (Iy[i-rep : i+rep+1, j-rep : j+rep+1] * Iy[i-rep : i+rep+1, j-rep : j+rep+1]).sum()]])
-                #
-                # ATB = np.array([(Ix[i-rep : i+rep+1, j-rep : j+rep+1] * It[i-rep : i+rep+1, j-rep : j+rep+1]).sum(), (Iy[i-rep : i+rep+1, j-rep : j+rep+1] * It[i-rep : i+rep+1, j-rep : j+rep+1]).sum()])
-                # ATB=ATB*-1
-                e, e1 = np.linalg.eig(ATA)
-                e = np.sort(e)
-                # make sure the eigen values are ok
-                if  e[0] > 1 and e[1]/e[0] < 100:
-                    v = np.linalg.inv(ATA) @ -(AT @ B)
-                    # v = np.linalg.inv(ATA) @ (ATB)
-                    # n = [v[0], v[1]]
-                    n = [v[0], v[1]]
-                    o=[j,i]
-                    origpoints = np.append(origpoints, o)
-                    newpoints = np.append(newpoints,n)
+            # getting the "window" of parts of the images
+            B = -It[i-rep : i+rep+1, j-rep : j+rep+1]
+            B = B.reshape(win_size**2, 1)
+            A1 = Ix[i-rep : i+rep+1, j-rep : j+rep+1].flatten()
+            A2 = Iy[i-rep : i+rep+1, j-rep : j+rep+1].flatten()
+
+            # creating matrix A (matrix of size win_size^2, 2)
+            A = np.array([])
+            for x in range(len(A1)):
+                A = np.append(A,A1[x])
+                A = np.append(A,A2[x])
+            A = A.reshape(win_size**2,2)
+            AT = A.T
+            ATA = AT@A
+
+            # ATA=np.array([[(Ix[i-rep : i+rep+1, j-rep : j+rep+1] * Ix[i-rep : i+rep+1, j-rep : j+rep+1]).sum(), (Ix[i-rep : i+rep+1, j-rep : j+rep+1] * Iy[i-rep : i+rep+1, j-rep : j+rep+1]).sum()],
+            #     [(Ix[i-rep : i+rep+1, j-rep : j+rep+1] * Iy[i-rep : i+rep+1, j-rep : j+rep+1]).sum(), (Iy[i-rep : i+rep+1, j-rep : j+rep+1] * Iy[i-rep : i+rep+1, j-rep : j+rep+1]).sum()]])
+            #
+            # ATB = np.array([(Ix[i-rep : i+rep+1, j-rep : j+rep+1] * It[i-rep : i+rep+1, j-rep : j+rep+1]).sum(), (Iy[i-rep : i+rep+1, j-rep : j+rep+1] * It[i-rep : i+rep+1, j-rep : j+rep+1]).sum()])
+            # ATB=ATB*-1
+
+            # getting eigen values and sorting them
+            e, e1 = np.linalg.eig(ATA)
+            e = np.sort(e)
+            # make sure the eigen values are ok
+            if  e[0] > 1 and e[1]/e[0] < 100:
+                vec = np.linalg.inv(ATA) @ -(AT @ B)
+                # v = np.linalg.inv(ATA) @ (ATB)
+
+                n = [vec[0], vec[1]]
+                o=[j,i]
+                # adding the points and u,v to there respective arrays
+                origpoints = np.append(origpoints, o)
+                newpoints = np.append(newpoints,n)
 
 
-            except:
-                z=z+1
-                # print("caught exceptain")
-
+    # changing the shape of the array so that it is in pairs of x,y / u,v
     origpoints = origpoints.reshape(int(origpoints.shape[0] / 2),2)
     newpoints = newpoints.reshape(int(newpoints.shape[0] / 2), 2)
 
-    # print("origpoints" , origpoints[0],origpoints[1])
-    # print("newpoints",newpoints[0],newpoints[0])
-    print("caught  %d exceptions" %(z))
     return origpoints , newpoints
 
 
@@ -109,6 +110,7 @@ def opticalFlowPyrLK(img1: np.ndarray, img2: np.ndarray, k: int, stepSize: int, 
     :return: A 3d array, with a shape of (m, n, 2),
     where the first channel holds U, and the second V.
     """
+    # create a pyramid of im1 and im2 with k levels - the first being the original image
     A=[]
     B=[]
     A.append(img1)
@@ -118,6 +120,7 @@ def opticalFlowPyrLK(img1: np.ndarray, img2: np.ndarray, k: int, stepSize: int, 
         A.append(cv2.pyrDown(A[-1], (A[-1].shape[0] // 2, A[-1].shape[1] // 2)))
         B.append(cv2.pyrDown(B[-1], (B[-1].shape[0] // 2, B[-1].shape[1] // 2)))
 
+    # create a pyramid of the change in a (m,n,2) matrix per level
     C = []
     for i in range(len(A)):
         a = A[i].shape[0]
@@ -127,12 +130,14 @@ def opticalFlowPyrLK(img1: np.ndarray, img2: np.ndarray, k: int, stepSize: int, 
         for x in range(len(old)):
             b=old[x][0].astype(int) # height of pix
             a=old[x][1].astype(int) # width of pix
-            c=new[x][0] # u of tran
-            d=new[x][1] # v of tran
+            c=new[x][0] # u of transformation
+            d=new[x][1] # v of transformation
             change[a][b][0]=c
             change[a][b][1]=d
         C.append(change)
 
+    # start from the smallest mat in c and add it into the next level
+    # by making the x,y bigger by 2 and the value bigger by 2
     for x in range(-1,-k,-1):
         y = x - 1
         for i in range(C[x].shape[0]):
@@ -156,53 +161,35 @@ def findTranslationLK(im1: np.ndarray, im2: np.ndarray) -> np.ndarray:
     :param im2: image 1 after Translation.
     :return: Translation matrix by LK.
     """
-    listt=[]
+
+    diff = float("inf")
+    spot = 0
     old, new=opticalFlow(im1,im2,10,5)
+    # look at all the u,v we found
     for x in range(len(new)):
-        # print("new",new[x])
         t1=new[x][0]
         t2=new[x][1]
-        # print(t1, t2)
         t = np.array([[1, 0, t1],
                       [0, 1, t2],
                       [0, 0, 1]], dtype=np.float)
+        # create a new image a transformation using u,v
         newimg = cv2.warpPerspective(im1, t, im1.shape[::-1])
-        listt.append(((im2-newimg).sum(),t1,t2))
-   # # check median
-   #  m1 = np.median(new, 0)
-   #  t1 = m1[0]
-   #  t2 = m1[1]
-   #  t = np.array([[1, 0, t1],
-   #                [0, 1, t2],
-   #                [0, 0, 1]], dtype=np.float)
-   #  newimg = cv2.warpPerspective(im1, t, im1.shape[::-1])
-   #  listt.append(((im2 - newimg).sum(), t1, t2))
-   #  # check mean
-   #  m1 = np.mean(new, 0)
-   #  t1 = m1[0]
-   #  t2 = m1[1]
-   #  t = np.array([[1, 0, t1],
-   #                [0, 1, t2],
-   #                [0, 0, 1]], dtype=np.float)
-   #  newimg = cv2.warpPerspective(im1, t, im1.shape[::-1])
-   #  listt.append(((im2 - newimg).sum(), t1, t2))
+        # find difference in image
+        d= ((im2-newimg)**2).sum()
 
-    y = float("inf")
-    spot=0
-    for x in range(len (listt)):
-        if listt[x][0]<y:
-            y=listt[x][0]
-            spot=x
-        if y==0:
-            break
+        if d<diff:
+            diff = d
+            spot = x
+            if diff==0:
+                print("break")
+                break
+    t1=new[spot][0]
+    t2=new[spot][1]
 
-    t1=listt[spot][1]
-    t2=listt[spot][2]
     t = np.array([[1, 0, t1],
                   [0, 1, t2],
                   [0, 0, 1]], dtype=np.float)
 
-    # print(t)
     return t
 
 
@@ -212,11 +199,54 @@ def findRigidLK(im1: np.ndarray, im2: np.ndarray) -> np.ndarray:
     :param im2: image 1 after Rigid.
     :return: Rigid matrix by LK.
     """
-    listt = []
+
     old, new = opticalFlow(im1, im2, 10, 5)
+    diff= float("inf")
 
+    for n in range(new.shape[0]):
+        x =  new[n][0]
+        y = new[n][1]
+        if(x!=0):
+            theta= np.arctan(y / x)
+        else:
+            theta =0
 
-    pass
+        # a = np.array([old[n][0], old[n][1]])
+        # b = np.array([old[n][0]+x, old[n][1]+y])
+        # inner = np.inner(a, b)
+        # np.linalg
+        # norms = np.linalg.norm(a) * np.linalg.norm(b)
+        # cos = inner / norms
+        # theta = np.arccos(np.clip(cos, -1.0, 1.0))
+        t = np.array([[np.cos(theta), -np.sin(theta), x],
+                       [np.sin(theta), np.cos(theta), y],
+                       [0, 0, 1]], dtype=np.float)
+        newpic= cv2.warpPerspective(im1, t,im1.shape[::-1])
+        d = ((im2 - newpic) ** 2).sum()
+        if d<diff:
+            diff=d
+            spot=n
+        if diff==0:
+            break
+
+    x = new[spot][0]
+    y = new[spot][1]
+    # a = np.array([old[spot][0], old[spot][1]])
+    # b = np.array([old[spot][0] + x, old[spot][1] + y])
+    # inner = np.inner(a, b)
+    # np.linalg
+    # norms = np.linalg.norm(a) * np.linalg.norm(b)
+    # cos = inner / norms
+    # theta = np.arccos(np.clip(cos, -1.0, 1.0))
+    if x!=0:
+        theta = np.arctan(y/x)
+    else:
+        theta=0
+    t = np.array([[np.cos(theta), -np.sin(theta), x],
+                  [np.sin(theta), np.cos(theta), y],
+                  [0, 0, 1]], dtype=np.float)
+
+    return (t)
 
 
 
@@ -228,7 +258,6 @@ def findTranslationCorr(im1: np.ndarray, im2: np.ndarray) -> np.ndarray:
     """
     win =13
     pad= win//2
-    im1pad = cv2.copyMakeBorder(im1, pad, pad, pad, pad, cv2.BORDER_REPLICATE, None, value=0)
     im2pad = cv2.copyMakeBorder(im2, pad, pad, pad, pad, cv2.BORDER_REPLICATE, None, value=0)
     I=[]
     J=[]
@@ -247,6 +276,7 @@ def findTranslationCorr(im1: np.ndarray, im2: np.ndarray) -> np.ndarray:
                 for j in range(0,im2.shape[1]):
                     if (i+pad+win)<im2pad.shape[0] and (j+pad+win)<im2pad.shape[1] :
                         windowb= im2pad[i+pad:i+pad+win, j+pad:j+pad+win]
+                        
                         bb=windowb.flatten()
                         top=np.correlate(aa,bb)
                         bottom=np.correlate(aa,aa)+np.correlate(bb,bb)
@@ -266,11 +296,11 @@ def findTranslationCorr(im1: np.ndarray, im2: np.ndarray) -> np.ndarray:
 
     dif=float("inf")
     spot=-1
-    print(len(corr_listt))
+
     for x in range (len(corr_listt)):
 
-        t1 = corr_listt[x][1][0] - corr_listt[x][0][1]
-        t2 = corr_listt[x][1][1] - corr_listt[x][0][2]
+        t1 = corr_listt[x][1][0] - corr_listt[x][0][1] # u
+        t2 = corr_listt[x][1][1] - corr_listt[x][0][2] # v
 
         t = np.array([[1, 0, t1],
                       [0, 1, t2],
@@ -282,10 +312,8 @@ def findTranslationCorr(im1: np.ndarray, im2: np.ndarray) -> np.ndarray:
             spot=x
             if dif==0:
                 break
-    print("diff=", dif , "spot=", spot)
-
-    t1 = corr_listt[spot][1][0] - corr_listt[spot][0][1]
-    t2 = corr_listt[spot][1][1] - corr_listt[spot][0][2]
+    t1 = corr_listt[spot][1][0] - corr_listt[spot][0][1] # u
+    t2 = corr_listt[spot][1][1] - corr_listt[spot][0][2] # v
     t = np.array([[1, 0, t1],
                   [0, 1, t2],
                   [0, 0, 1]], dtype=np.float)
@@ -345,15 +373,22 @@ def findRigidCorr(im1: np.ndarray, im2: np.ndarray) -> np.ndarray:
         print(n)
         x =  corr_listt[n][1][0] - corr_listt[n][0][1]
         y = corr_listt[n][1][1] - corr_listt[n][0][2]
+        # a = np.array([corr_listt[spot][1][0], corr_listt[spot][1][1]])
+        # b = np.array([corr_listt[spot][0][1], corr_listt[spot][0][2]])
+        # inner = np.inner(a, b)
+        # norms = np.linalg.norm(a) * np.linalg.norm(b)
+        # cos = inner / norms
+        # theta = np.arccos(np.clip(cos, -1.0, 1.0))
+
         if(y!=0):
-            theta= np.arctan(np.abs(x) / np.abs(y))
+            theta= np.arctan(x / y)
         else:
             theta =0
-        print("theata=", theta, "x=", x,"y=",y)
-        t = np.array([[np.cos(theta), -np.sin(theta), 0],
-                       [np.sin(theta), np.cos(theta), 0],
+        # print("theata=", theta, "x=", x,"y=",y, "a=", a, "b=", b)
+        t = np.array([[np.cos(theta), -np.sin(theta), x],
+                       [np.sin(theta), np.cos(theta), y],
                        [0, 0, 1]], dtype=np.float)
-        print("mat=",t)
+        # print("mat=",t)
         new= cv2.warpPerspective(im1, t,im1.shape[::-1])
         d = ((im2 - new) ** 2).sum()
         if d<diff:
@@ -361,48 +396,29 @@ def findRigidCorr(im1: np.ndarray, im2: np.ndarray) -> np.ndarray:
             spot=n
         if diff==0:
             break
-    print("finished loop")
-    print("diff=", diff, "spot=", spot)
+    # print("finished loop")
+    # print("diff=", diff, "spot=", spot)
     x = corr_listt[spot][1][0] - corr_listt[spot][0][1]
     y = corr_listt[spot][1][1] - corr_listt[spot][0][2]
+    # a=np.array([corr_listt[spot][1][0], corr_listt[spot][1][1] ])
+    # b=np.array([corr_listt[spot][0][1], corr_listt[spot][0][2]])
+    # inner = np.inner(a, b)
+    # norms = np.linalg.norm(a) * np.linalg.norm(b)
+    # cos = inner / norms
+    # theta = np.arccos(np.clip(cos, -1.0, 1.0))
     if y!=0:
-        theta = np.arctan(np.abs(x) /np.abs(y))
+        theta = np.arctan(x /y)
     else:
         theta=0
-    print("theata=", theta, "x=", x,"y=",y)
-    t = np.array([[np.cos(theta), -np.sin(theta), 0],
-                  [np.sin(theta), np.cos(theta), 0],
+    # print("theata=", theta, "x=", x,"y=",y)
+    t = np.array([[np.cos(theta), -np.sin(theta), x],
+                  [np.sin(theta), np.cos(theta), y],
                   [0, 0, 1]], dtype=np.float)
-    print("mat=",t)
+    # print("mat=",t)
     return (t)
 
 
-    # dif = float("inf")
-    # spot = -1
-    # print(len(corr_listt))
-    # for x in range(len(corr_listt)):
-    #
-    #     t1 = corr_listt[x][1][0] - corr_listt[x][0][1]
-    #     t2 = corr_listt[x][1][1] - corr_listt[x][0][2]
-    #
-    #     t = np.array([[1, 0, t1],
-    #                   [0, 1, t2],
-    #                   [0, 0, 1]], dtype=np.float)
-    #     new = cv2.warpPerspective(im1, t, im1.shape[::-1])
-    #     d = ((im2 - new) ** 2).sum()
-    #     if d < dif:
-    #         dif = d
-    #         spot = x
-    #         if dif == 0:
-    #             break
-    # print("diff=", dif, "spot=", spot)
-    #
-    # t1 = corr_listt[spot][1][0] - corr_listt[spot][0][1]
-    # t2 = corr_listt[spot][1][1] - corr_listt[spot][0][2]
-    # t = np.array([[1, 0, t1],
-    #               [0, 1, t2],
-    #               [0, 0, 1]], dtype=np.float)
-    # return t
+
 
 
 def warpImages(im1: np.ndarray, im2: np.ndarray, T: np.ndarray) -> np.ndarray:
@@ -415,106 +431,78 @@ def warpImages(im1: np.ndarray, im2: np.ndarray, T: np.ndarray) -> np.ndarray:
     and the wrapped version of the image2 in the same figure.
     """
 
-    # # forward
-    # z=0
-    # try:
-    #     # M=np.zeros((3,im1.shape[0]*im1.shape[1]))
-    #     # count=0
-    #     # for i in range(im1.shape[0]):
-    #     #     for j in range(im1.shape[1]):
-    #     #         M[0][count] = i
-    #     #         M[1][count] = j
-    #     #         M[2][count] = 1
-    #     #         count+=1
-    #     #
-    #     # m1= np.linalg.inv(T) @ M
-    #     # x=0
-    #     # y=0
-    #     # for num in range(m1.shape[1]):
-    #         # print(num)
-    #         # print( "row=",(num // im1.shape[0]), x)
-    #         # print("col=",num % im1.shape[1], y)
-    #     for i in range(im2.shape[0]):
-    #         for j in range(im2.shape[1]):
-    #             arr= np.array([i,j,1])
+    # forward
+
+    # for i in range(im1.shape[0]):
+    #     for j in range(im1.shape[1]):
+    #         arr= np.array([i,j,1])
     #
-    #             newarr=T@arr
-    #             # print(newarr)
-    #             x1 = np.floor(newarr[0]).astype(int)
-    #             x2 = np.ceil(newarr[0]).astype(int)
-    #             x3= newarr[0]%1
-    #             y1 = np.floor(newarr[1]).astype(int)
-    #             y2 = np.ceil(newarr[1]).astype(int)
-    #             y3 = newarr[1]%1
-    #             # x1 = np.floor(m1[0][num]).astype(int)
-    #             # x2 = np.ceil(m1[0][num]).astype(int)
-    #             # x3= m1[0][num]%1
-    #             # y1 = np.floor(m1[1][num]).astype(int)
-    #             # y2 = np.ceil(m1[1][num]).astype(int)
-    #             # y3 = m1[1][num] % 1
-    #             # if x1>=0 and y1>=0 and x1<im2.shape[0] and y1<im2.shape[1]:
-    #             #     im2[x1][y1]+= (1-x3) * (1-y3) * im1[x][y]
-    #             #
-    #             # if x2 >= 0 and y1 >= 0 and x2 < im2.shape[0] and y1 < im2.shape[1]:
-    #             #     im2[x2][y1] += x3 * (1-y3) * im1[x][y]
-    #             #
-    #             # if x1 >= 0 and y2 >= 0 and x1 < im2.shape[0] and y2 < im2.shape[1]:
-    #             #     im2[x1][y2] += (1-x3) * y3 * im1[x][y]
-    #             #
-    #             # if x2 >= 0 and y2 >= 0 and x2 < im2.shape[0] and y2 < im2.shape[1]:
-    #             #     im2[x2][y2] += x3 * y3 * im1[x][y]
+    #         newarr=T@arr
     #
-    #             if x1>=0 and y1>=0 and x1<im2.shape[0] and y1<im2.shape[1]:
-    #                 im2[x1][y1]+= x3 * y3 * im1[i][j]
+    #         x1 = np.floor(newarr[0]).astype(int)
+    #         x2 = np.ceil(newarr[0]).astype(int)
+    #         x3= newarr[0]%1
+    #         y1 = np.floor(newarr[1]).astype(int)
+    #         y2 = np.ceil(newarr[1]).astype(int)
+    #         y3 = newarr[1]%1
     #
-    #             if x2 >= 0 and y1 >= 0 and x2 < im2.shape[0] and y1 < im2.shape[1]:
-    #                 im2[x2][y1] += (1-x3) * y3 * im1[i][j]
+    #         # if x1>=0 and y1>=0 and x1<im2.shape[0] and y1<im2.shape[1]:
+    #         #     im2[x1][y1]+= (1-x3) * (1-y3) * im1[i][j]
+    #         #
+    #         # if x2 >= 0 and y1 >= 0 and x2 < im2.shape[0] and y1 < im2.shape[1]:
+    #         #     im2[x2][y1] += x3 * (1-y3) * im1[i][j]
+    #         #
+    #         # if x1 >= 0 and y2 >= 0 and x1 < im2.shape[0] and y2 < im2.shape[1]:
+    #         #     im2[x1][y2] += (1-x3) * y3 * im1[i][j]
+    #         #
+    #         # if x2 >= 0 and y2 >= 0 and x2 < im2.shape[0] and y2 < im2.shape[1]:
+    #         #     im2[x2][y2] += x3 * y3 * im1[i][j]
     #
-    #             if x1 >= 0 and y2 >= 0 and x1 < im2.shape[0] and y2 < im2.shape[1]:
-    #                 im2[x1][y2] += x3 * (1-y3) * im1[i][j]
+    #         if x1>=0 and y1>=0 and x1<im2.shape[0] and y1<im2.shape[1]:
+    #             im2[x1][y1]+= x3 * y3 * im1[i][j]
     #
-    #             if x2 >= 0 and y2 >= 0 and x2 < im2.shape[0] and y2 < im2.shape[1]:
-    #                 im2[x2][y2] += (1-x3) * (1-y3) * im1[i][j]
+    #         if x2 >= 0 and y1 >= 0 and x2 < im2.shape[0] and y1 < im2.shape[1]:
+    #             im2[x2][y1] += (1-x3) * y3 * im1[i][j]
     #
+    #         if x1 >= 0 and y2 >= 0 and x1 < im2.shape[0] and y2 < im2.shape[1]:
+    #             im2[x1][y2] += x3 * (1-y3) * im1[i][j]
     #
-    #             # y+=1
-    #             # if (y >= im1.shape[1]):
-    #             #     y = 0
-    #             #     x += 1
-    # except:
-    #     z=z+1
-    # print("caught  %d exceptions" %(z))
+    #         if x2 >= 0 and y2 >= 0 and x2 < im2.shape[0] and y2 < im2.shape[1]:
+    #             im2[x2][y2] += (1-x3) * (1-y3) * im1[i][j]
     #
     # plt.imshow(im2)
     # plt.show()
     # return im2
 
 
-
     # backward
     new=np.zeros((im1.shape[0],im1.shape[1]))
-    m1 = np.linalg.inv(T)
+    Tinv = np.linalg.inv(T)
+    print(T, "\n",Tinv)
     for i in range(im2.shape[0]):
         for j in range(im2.shape[1]):
             arr= np.array([i,j,1])
-            newarr=m1@arr
+            newarr=Tinv@arr
             x1 = np.floor(newarr[0]).astype(int)
             x2 = np.ceil(newarr[0]).astype(int)
-            x3= newarr[0]%1
+            x3= round(newarr[0]%1, 3)
             y1 = np.floor(newarr[1]).astype(int)
             y2 = np.ceil(newarr[1]).astype(int)
-            y3 = newarr[1]%1
-            if x1>=0 and y1>=0 and x1<im2.shape[0] and y1<im2.shape[1]:
-                new[x1][y1]+= x3 * y3 * im2[i][j]
+            y3 = round(newarr[1]%1,3)
 
-            if x2 >= 0 and y1 >= 0 and x2 < im2.shape[0] and y1 < im2.shape[1]:
-                new[x2][y1] +=(1- x3) * y3 * im2[i][j]
 
-            if x1 >= 0 and y2 >= 0 and x1 < im2.shape[0] and y2 < im2.shape[1]:
-                new[x1][y2] += x3 * (1-y3) * im2[i][j]
+            if x1>=0 and y1>=0 and x1<im1.shape[0] and y1<im1.shape[1]:
+                new[i][j]+= (1-x3) * (1-y3) * im1[x1][y1]
 
-            if x2 >= 0 and y2 >= 0 and x2 < im2.shape[0] and y2 < im2.shape[1]:
-                new[x2][y2] += (1-x3) * (1-y3) * im2[i][j]
+            if x2 >= 0 and y1 >= 0 and x2 < im1.shape[0] and y1 < im1.shape[1]:
+                new[i][j] += x3 * (1-y3) * im1[x2][y1]
+
+            if x1 >= 0 and y2 >= 0 and x1 < im1.shape[0] and y2 < im1.shape[1]:
+                new[i][j] += (1-x3) * y3 * im1[x1][y2]
+
+            if x2 >= 0 and y2 >= 0 and x2 < im1.shape[0] and y2 < im1.shape[1]:
+                new[i][j] += x3 * y3 * im1[x2][y2]
+
 
     plt.imshow(new)
     plt.show()
