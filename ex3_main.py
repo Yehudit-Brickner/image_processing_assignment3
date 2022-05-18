@@ -15,12 +15,12 @@ def MSE(a: np.ndarray, b: np.ndarray) -> float:
 def lkDemo(img_path):
     print("LK Demo")
 
-    img_1 = cv2.cvtColor(cv2.imread(img_path), cv2.COLOR_BGR2GRAY)
+    img_1 = cv2.cvtColor(cv2.imread(img_path), cv2.COLOR_BGR2RGB)
     img_1 = cv2.resize(img_1, (0, 0), fx=.5, fy=0.5)
     t = np.array([[1, 0, -.2],
                   [0, 1, -.1],
                   [0, 0, 1]], dtype=np.float)
-    img_2 = cv2.warpPerspective(img_1, t, img_1.shape[::-1])
+    img_2 = cv2.warpPerspective(img_1, t, (img_1.shape[1], img_1.shape[0]))
 
 
     st = time.time()
@@ -47,7 +47,7 @@ def hierarchicalkDemo(img_path):
     t = np.array([[1, 0, -.2],
                   [0, 1, -.1],
                   [0, 0, 1]], dtype=np.float)
-    im2 = cv2.warpPerspective(im1, t, im1.shape[::-1])
+    im2 = cv2.warpPerspective(im1, t, (im1.shape[1], im1.shape[0]))
 
     ans = opticalFlowPyrLK(im1.astype(np.float), im2.astype(np.float), 4, 20, 5)
 
@@ -88,7 +88,7 @@ def compareLK(img_path):
     t = np.array([[1, 0, -0.2],
                   [0, 1, -0.1],
                   [0, 0, 1]], dtype=np.float)
-    im2 = cv2.warpPerspective(im1, t, im1.shape[::-1])
+    im2 = cv2.warpPerspective(im1, t,(im1.shape[1],im1.shape[0]))
 
     pts,uv=opticalFlow(im1.astype(np.float), im2.astype(np.float), step_size=20, win_size=5)
 
@@ -197,8 +197,8 @@ def rigidlkdemo(img_path):
 def translationcorrdemo(img_path):
     img_1 = cv2.cvtColor(cv2.imread(img_path), cv2.COLOR_BGR2GRAY)
     img_1 = cv2.resize(img_1, (0, 0), fx=.5, fy=0.5)
-    t = np.array([[1, 0, .2],
-                  [0, 1, -.2],
+    t = np.array([[1, 0, 5.5],
+                  [0, 1, -2.75],
                   [0, 0, 1]], dtype=np.float)
     img_2 = cv2.warpPerspective(img_1, t, img_1.shape[::-1])
     st = time.time()
@@ -224,8 +224,8 @@ def translationcorrdemo(img_path):
 def rigidcorrdemo(img_path):
     img_1 = cv2.cvtColor(cv2.imread(img_path), cv2.COLOR_BGR2GRAY)
     img_1 = cv2.resize(img_1, (0, 0), fx=.5, fy=0.5)
-    t1 = np.array([[1, 0, 0],
-                  [0, 1, 0],
+    t1 = np.array([[1, 0, 2],
+                  [0, 1, -2],
                   [0, 0, 1]], dtype=np.float)
     theta=0.05
     t2 = np.array([[np.cos(theta), -np.sin(theta), 0],
@@ -391,14 +391,14 @@ def blendDemo():
 def main():
     print("ID:", myID())
 
-    img_path = 'input/start1.jpg'
+    img_path = 'input/boxMan.jpg'
 
 
-    # lkDemo(img_path)
-    # hierarchicalkDemo(img_path)
-    # compareLK(img_path)
+    lkDemo(img_path)
+    hierarchicalkDemo(img_path)
+    compareLK(img_path)
     # translationlkdemo(img_path)
-    translationcorrdemo(img_path)
+    # translationcorrdemo(img_path)
     # rigidcorrdemo(img_path)
     # imageWarpingDemo(img_path)
     # rigidlkdemo(img_path)

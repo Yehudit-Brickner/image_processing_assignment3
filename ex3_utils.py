@@ -55,25 +55,25 @@ def opticalFlow(im1: np.ndarray, im2: np.ndarray, step_size=10, win_size=5) -> (
     for i in range(start,im1.shape[0]-start, step_size):
         for j in range(start, im1.shape[1]-start,step_size):
 
-            # getting the "window" of parts of the images
-            B = -It[i-rep : i+rep+1, j-rep : j+rep+1]
-            B = B.reshape(win_size**2, 1)
-            A1 = Ix[i-rep : i+rep+1, j-rep : j+rep+1].flatten()
-            A2 = Iy[i-rep : i+rep+1, j-rep : j+rep+1].flatten()
-
-            # creating matrix A (matrix of size win_size^2, 2)
-            A = np.array([])
-            for x in range(len(A1)):
-                A = np.append(A,A1[x])
-                A = np.append(A,A2[x])
-            A = A.reshape(win_size**2,2)
-            AT = A.T
-            ATA = AT@A
-
-            # ATA=np.array([[(Ix[i-rep : i+rep+1, j-rep : j+rep+1] * Ix[i-rep : i+rep+1, j-rep : j+rep+1]).sum(), (Ix[i-rep : i+rep+1, j-rep : j+rep+1] * Iy[i-rep : i+rep+1, j-rep : j+rep+1]).sum()],
-            #     [(Ix[i-rep : i+rep+1, j-rep : j+rep+1] * Iy[i-rep : i+rep+1, j-rep : j+rep+1]).sum(), (Iy[i-rep : i+rep+1, j-rep : j+rep+1] * Iy[i-rep : i+rep+1, j-rep : j+rep+1]).sum()]])
+            # # getting the "window" of parts of the images
+            # B = -It[i-rep : i+rep+1, j-rep : j+rep+1]
+            # B = B.reshape(win_size**2, 1)
+            # A1 = Ix[i-rep : i+rep+1, j-rep : j+rep+1].flatten()
+            # A2 = Iy[i-rep : i+rep+1, j-rep : j+rep+1].flatten()
             #
-            # ATB = np.array([(Ix[i-rep : i+rep+1, j-rep : j+rep+1] * It[i-rep : i+rep+1, j-rep : j+rep+1]).sum(), (Iy[i-rep : i+rep+1, j-rep : j+rep+1] * It[i-rep : i+rep+1, j-rep : j+rep+1]).sum()])
+            # # creating matrix A (matrix of size win_size^2, 2)
+            # A = np.array([])
+            # for x in range(len(A1)):
+            #     A = np.append(A,A1[x])
+            #     A = np.append(A,A2[x])
+            # A = A.reshape(win_size**2,2)
+            # AT = A.T
+            # ATA = AT@A
+
+            ATA=np.array([[(Ix[i-rep : i+rep+1, j-rep : j+rep+1] * Ix[i-rep : i+rep+1, j-rep : j+rep+1]).sum(), (Ix[i-rep : i+rep+1, j-rep : j+rep+1] * Iy[i-rep : i+rep+1, j-rep : j+rep+1]).sum()],
+                [(Ix[i-rep : i+rep+1, j-rep : j+rep+1] * Iy[i-rep : i+rep+1, j-rep : j+rep+1]).sum(), (Iy[i-rep : i+rep+1, j-rep : j+rep+1] * Iy[i-rep : i+rep+1, j-rep : j+rep+1]).sum()]])
+
+            ATB = np.array([(Ix[i-rep : i+rep+1, j-rep : j+rep+1] * It[i-rep : i+rep+1, j-rep : j+rep+1]).sum(), (Iy[i-rep : i+rep+1, j-rep : j+rep+1] * It[i-rep : i+rep+1, j-rep : j+rep+1]).sum()])
             # ATB=ATB*-1
 
             # getting eigen values and sorting them
@@ -81,8 +81,8 @@ def opticalFlow(im1: np.ndarray, im2: np.ndarray, step_size=10, win_size=5) -> (
             e = np.sort(e)
             # make sure the eigen values are ok
             if  e[0] > 1 and e[1]/e[0] < 100:
-                vec = np.linalg.inv(ATA) @ -(AT @ B)
-                # v = np.linalg.inv(ATA) @ (ATB)
+                # vec = np.linalg.inv(ATA) @ -(AT @ B)
+                vec = np.linalg.inv(ATA) @ (ATB)
 
                 n = [vec[0], vec[1]]
                 o=[j,i]
@@ -270,22 +270,29 @@ def findTranslationCorr(im1: np.ndarray, im2: np.ndarray) -> np.ndarray:
     for x in range(len(I)):
         for y in range(len(J)):
             windowa = im1[I[x] - pad:I[x] + pad + 1, J[y] - pad:J[y] + pad + 1]
-            aa=windowa.flatten()
+            # aa=windowa.flatten()
+            a = windowa.reshape(1, win * win)
+            aT = a.T
             big = [(np.array([0]), 0, 0)]
             for i in range(0,im2.shape[0]):
                 for j in range(0,im2.shape[1]):
                     if (i+pad+win)<im2pad.shape[0] and (j+pad+win)<im2pad.shape[1] :
                         windowb= im2pad[i+pad:i+pad+win, j+pad:j+pad+win]
-                        
-                        bb=windowb.flatten()
-                        top=np.correlate(aa,bb)
-                        bottom=np.correlate(aa,aa)+np.correlate(bb,bb)
-                        corr =top/bottom
-                        if corr > big[0][0]:
-                            big.clear()
-                            big.insert(0, (corr, i, j))
-                        elif corr == big[0][0]:
-                            big.insert(0, (corr, i, j))
+                        b = windowb.reshape(1, win * win)
+                        bT=b.T
+                        # bb=windowb.flatten()
+                        # top=np.correlate(aa,bb)
+                        # bottom=np.correlate(aa,aa)+np.correlate(bb,bb)
+                        # corr =top/bottom
+                        top = np.dot(a, bT)
+                        bottom = np.dot(a, aT) + np.dot(b, bT)
+                        if bottom != 0:
+                            corr = top / bottom
+                            if corr > big[0][0]:
+                                big.clear()
+                                big.insert(0, (corr, i, j))
+                            elif corr == big[0][0]:
+                                big.insert(0, (corr, i, j))
             if big[0][0][0] > corr_listt[0][0][0]:
                 corr_listt.clear()
                 for m in range(len(big)):
@@ -341,20 +348,28 @@ def findRigidCorr(im1: np.ndarray, im2: np.ndarray) -> np.ndarray:
         for y in range(len(J)):
             windowa = im1[I[x] - pad:I[x] + pad + 1, J[y] - pad:J[y] + pad + 1]
             aa = windowa.flatten()
+            a = windowa.reshape(1, win * win)
+            aT = a.T
             big = [(np.array([0]), 0, 0)]
             for i in range(0, im2.shape[0]):
                 for j in range(0, im2.shape[1]):
                     if (i + pad + win) < im2pad.shape[0] and (j + pad + win) < im2pad.shape[1]:
                         windowb = im2pad[i + pad:i + pad + win, j + pad:j + pad + win]
-                        bb = windowb.flatten()
-                        top = np.correlate(aa, bb)
-                        bottom = np.correlate(aa, aa) + np.correlate(bb, bb)
-                        corr = top / bottom
-                        if corr > big[0][0]:
-                            big.clear()
-                            big.insert(0, (corr, i, j))
-                        elif corr == big[0][0]:
-                            big.insert(0, (corr, i, j))
+                        b = windowb.reshape(1, win * win)
+                        bT = b.T
+                        # bb = windowb.flatten()
+                        # top = np.correlate(aa, bb)
+                        # bottom = np.correlate(aa, aa) + np.correlate(bb, bb)
+                        # corr = top / bottom
+                        top = np.dot(a, bT)
+                        bottom = np.dot(a, aT) + np.dot(b, bT)
+                        if bottom != 0:
+                            corr = top / bottom
+                            if corr > big[0][0]:
+                                big.clear()
+                                big.insert(0, (corr, i, j))
+                            elif corr == big[0][0]:
+                                big.insert(0, (corr, i, j))
             if big[0][0][0] > corr_listt[0][0][0]:
                 corr_listt.clear()
                 for m in range(len(big)):
@@ -368,9 +383,9 @@ def findRigidCorr(im1: np.ndarray, im2: np.ndarray) -> np.ndarray:
 
     spot=-1
     diff=float("inf")
-    print(len(corr_listt))
+    # print(len(corr_listt))
     for n in range(len(corr_listt)):
-        print(n)
+        # print(n)
         x =  corr_listt[n][1][0] - corr_listt[n][0][1]
         y = corr_listt[n][1][1] - corr_listt[n][0][2]
         # a = np.array([corr_listt[spot][1][0], corr_listt[spot][1][1]])
@@ -381,7 +396,7 @@ def findRigidCorr(im1: np.ndarray, im2: np.ndarray) -> np.ndarray:
         # theta = np.arccos(np.clip(cos, -1.0, 1.0))
 
         if(y!=0):
-            theta= np.arctan(x / y)
+            theta= np.arctan(x/ y)
         else:
             theta =0
         # print("theata=", theta, "x=", x,"y=",y, "a=", a, "b=", b)
