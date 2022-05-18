@@ -184,7 +184,8 @@ def translationlkdemo(img_path):
 
 
 def rigidlkdemo(img_path):
-    img_1 = cv2.cvtColor(cv2.imread(img_path), cv2.COLOR_BGR2GRAY)
+    img_1 = cv2.cvtColor(cv2.imread(img_path), cv2.COLOR_BGR2RGB)
+    # img_1 = cv2.cvtColor(cv2.imread(img_path), cv2.COLOR_BGR2GRAY)
     t1 = np.array([[1, 0, 2],
                   [0, 1, -5],
                   [0, 0, 1]], dtype=np.float)
@@ -194,32 +195,45 @@ def rigidlkdemo(img_path):
                  [0,0,1]],dtype=np.float)
 
     t=t1@t2
-    img_2 = cv2.warpPerspective(img_1, t, img_1.shape[::-1])
+    img_2 = cv2.warpPerspective(img_1, t, (img_1.shape[1], img_1.shape[0]))
     st = time.time()
     mat = findRigidLK(img_1, img_2)
     et = time.time()
     print("Time: {:.4f}".format(et - st))
     print("mat\n", mat, "\nt\n", t)
 
-    new = cv2.warpPerspective(img_1, mat, img_1.shape[::-1])
-    f, ax = plt.subplots(1, 3)
-    ax[0].set_title('img2 given transformation')
-    ax[0].imshow(img_2, cmap='gray')
+    new = cv2.warpPerspective(img_1, mat, (img_1.shape[1], img_1.shape[0]))
+    if len (img_2.shape)==2:
+        f, ax = plt.subplots(1, 3)
+        ax[0].set_title('img2 given transformation')
+        ax[0].imshow(img_2, cmap='gray')
 
-    ax[1].set_title('img2 found transformation')
-    ax[1].imshow(new, cmap='gray')
+        ax[1].set_title('img2 found transformation')
+        ax[1].imshow(new, cmap='gray')
 
-    ax[2].set_title('diff')
-    ax[2].imshow(img_2 - new, cmap='gray')
+        ax[2].set_title('diff')
+        ax[2].imshow(img_2 - new, cmap='gray')
 
-    plt.show()
+        plt.show()
+    else:
+        f, ax = plt.subplots(1, 3)
+        ax[0].set_title('img2 given transformation')
+        ax[0].imshow(img_2)
+
+        ax[1].set_title('img2 found transformation')
+        ax[1].imshow(new)
+
+        ax[2].set_title('diff')
+        ax[2].imshow(img_2 - new)
+
+        plt.show()
     print("mse= ", MSE(new, img_2))
 
 def translationcorrdemo(img_path):
     img_1 = cv2.cvtColor(cv2.imread(img_path), cv2.COLOR_BGR2GRAY)
     img_1 = cv2.resize(img_1, (0, 0), fx=.5, fy=0.5)
-    t = np.array([[1, 0, 5.5],
-                  [0, 1, -2.75],
+    t = np.array([[1, 0, -2],
+                  [0, 1, 2],
                   [0, 0, 1]], dtype=np.float)
     img_2 = cv2.warpPerspective(img_1, t, img_1.shape[::-1])
     st = time.time()
@@ -418,7 +432,7 @@ def main():
     # lkDemo(img_path)
     # hierarchicalkDemo(img_path)
     # compareLK(img_path)
-    translationlkdemo(img_path)
+    # translationlkdemo(img_path)
     # translationcorrdemo(img_path)
     # rigidcorrdemo(img_path)
     # imageWarpingDemo(img_path)
