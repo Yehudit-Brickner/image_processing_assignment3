@@ -55,20 +55,7 @@ def opticalFlow(im1: np.ndarray, im2: np.ndarray, step_size=10, win_size=5) -> (
     for i in range(start,im1.shape[0]-start, step_size):
         for j in range(start, im1.shape[1]-start,step_size):
 
-            # # getting the "window" of parts of the images
-            # B = -It[i-rep : i+rep+1, j-rep : j+rep+1]
-            # B = B.reshape(win_size**2, 1)
-            # A1 = Ix[i-rep : i+rep+1, j-rep : j+rep+1].flatten()
-            # A2 = Iy[i-rep : i+rep+1, j-rep : j+rep+1].flatten()
-            #
-            # # creating matrix A (matrix of size win_size^2, 2)
-            # A = np.array([])
-            # for x in range(len(A1)):
-            #     A = np.append(A,A1[x])
-            #     A = np.append(A,A2[x])
-            # A = A.reshape(win_size**2,2)
-            # AT = A.T
-            # ATA = AT@A
+            # getting the "window" of parts of the images
 
             ATA=np.array([[(Ix[i-rep : i+rep+1, j-rep : j+rep+1] * Ix[i-rep : i+rep+1, j-rep : j+rep+1]).sum(), (Ix[i-rep : i+rep+1, j-rep : j+rep+1] * Iy[i-rep : i+rep+1, j-rep : j+rep+1]).sum()],
                 [(Ix[i-rep : i+rep+1, j-rep : j+rep+1] * Iy[i-rep : i+rep+1, j-rep : j+rep+1]).sum(), (Iy[i-rep : i+rep+1, j-rep : j+rep+1] * Iy[i-rep : i+rep+1, j-rep : j+rep+1]).sum()]])
@@ -81,7 +68,6 @@ def opticalFlow(im1: np.ndarray, im2: np.ndarray, step_size=10, win_size=5) -> (
             e = np.sort(e)
             # make sure the eigen values are ok
             if  e[0] > 1 and e[1]/e[0] < 100:
-                # vec = np.linalg.inv(ATA) @ -(AT @ B)
                 vec = np.linalg.inv(ATA) @ (ATB)
 
                 n = [vec[0], vec[1]]
@@ -173,7 +159,7 @@ def findTranslationLK(im1: np.ndarray, im2: np.ndarray) -> np.ndarray:
                       [0, 1, t2],
                       [0, 0, 1]], dtype=np.float)
         # create a new image a transformation using u,v
-        newimg = cv2.warpPerspective(im1, t, im1.shape[::-1])
+        newimg = cv2.warpPerspective(im1, t, (im1.shape[1],im1.shape[0]))
         # find difference in image
         d= ((im2-newimg)**2).sum()
 
@@ -259,6 +245,9 @@ def findTranslationCorr(im1: np.ndarray, im2: np.ndarray) -> np.ndarray:
     win =13
     pad= win//2
     im2pad = cv2.copyMakeBorder(im2, pad, pad, pad, pad, cv2.BORDER_REPLICATE, None, value=0)
+
+    # getting 4 x and y points to be the middle of the window
+    # the points are 1/5, 2/5 ... of the length and height
     I=[]
     J=[]
     for x in range (1,5):
@@ -269,23 +258,23 @@ def findTranslationCorr(im1: np.ndarray, im2: np.ndarray) -> np.ndarray:
     corr_listt=[(np.array([0]),0,0)]
     for x in range(len(I)):
         for y in range(len(J)):
+            # getting a template to match
             windowa = im1[I[x] - pad:I[x] + pad + 1, J[y] - pad:J[y] + pad + 1]
-            # aa=windowa.flatten()
             a = windowa.reshape(1, win * win)
             aT = a.T
             big = [(np.array([0]), 0, 0)]
+            # going through the other pic to match the template
             for i in range(0,im2.shape[0]):
                 for j in range(0,im2.shape[1]):
                     if (i+pad+win)<im2pad.shape[0] and (j+pad+win)<im2pad.shape[1] :
                         windowb= im2pad[i+pad:i+pad+win, j+pad:j+pad+win]
                         b = windowb.reshape(1, win * win)
                         bT=b.T
-                        # bb=windowb.flatten()
-                        # top=np.correlate(aa,bb)
-                        # bottom=np.correlate(aa,aa)+np.correlate(bb,bb)
-                        # corr =top/bottom
                         top = np.dot(a, bT)
                         bottom = np.dot(a, aT) + np.dot(b, bT)
+                        # finding the correlation between the template and this window
+                        # if it is bigger than the first value in list big clear big and put it in with the x y values of im2
+                        # if it is equal to the first value add it to the list and put it in with the x y values of im2
                         if bottom != 0:
                             corr = top / bottom
                             if corr > big[0][0]:
@@ -293,6 +282,9 @@ def findTranslationCorr(im1: np.ndarray, im2: np.ndarray) -> np.ndarray:
                                 big.insert(0, (corr, i, j))
                             elif corr == big[0][0]:
                                 big.insert(0, (corr, i, j))
+            # after checking this template check if the first value in big is bigger than the first value in corr_lisst
+            # if so clear corr_listt and copy the values from big to corr_listt and add the x y vaues of the original image
+            # if it equals copy the values from big to corr_listt and add the x y vaues of the original image
             if big[0][0][0] > corr_listt[0][0][0]:
                 corr_listt.clear()
                 for m in range(len(big)):
@@ -303,22 +295,24 @@ def findTranslationCorr(im1: np.ndarray, im2: np.ndarray) -> np.ndarray:
 
     dif=float("inf")
     spot=-1
-
+    # go through all values in the cor list and find the u v by finding the difference between im1 xy and im2 xy
     for x in range (len(corr_listt)):
 
         t1 = corr_listt[x][1][0] - corr_listt[x][0][1] # u
         t2 = corr_listt[x][1][1] - corr_listt[x][0][2] # v
-
+    # create a new img with the found transformation
         t = np.array([[1, 0, t1],
                       [0, 1, t2],
                       [0, 0, 1]], dtype=np.float)
-        new=cv2.warpPerspective(im1, t, im1.shape[::-1])
+        new=cv2.warpPerspective(im1, t, (im1.shape[1],im1.shape[0]))
+        # find the difference between new and im2 if smaller than diff update diff and spot
         d= ((im2-new)**2).sum()
         if d<dif:
             dif=d
             spot=x
             if dif==0:
                 break
+    # take the values from corrlist that has the smallest diff and return the transformation
     t1 = corr_listt[spot][1][0] - corr_listt[spot][0][1] # u
     t2 = corr_listt[spot][1][1] - corr_listt[spot][0][2] # v
     t = np.array([[1, 0, t1],

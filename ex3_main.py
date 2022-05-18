@@ -16,6 +16,7 @@ def lkDemo(img_path):
     print("LK Demo")
 
     img_1 = cv2.cvtColor(cv2.imread(img_path), cv2.COLOR_BGR2RGB)
+    img_1 = cv2.cvtColor(cv2.imread(img_path), cv2.COLOR_BGR2GRAY)
     img_1 = cv2.resize(img_1, (0, 0), fx=.5, fy=0.5)
     t = np.array([[1, 0, -.2],
                   [0, 1, -.1],
@@ -42,6 +43,7 @@ def hierarchicalkDemo(img_path):
     """
     print("Hierarchical LK Demo")
 
+    im1 = cv2.cvtColor(cv2.imread(img_path), cv2.COLOR_BGR2RGB)
     im1 = cv2.cvtColor(cv2.imread(img_path), cv2.COLOR_BGR2GRAY)
     im1 = cv2.resize(im1, (0, 0), fx=.5, fy=0.5)
     t = np.array([[1, 0, -.2],
@@ -83,6 +85,7 @@ def compareLK(img_path):
     """
     print("Compare LK & Hierarchical LK")
 
+    im1 = cv2.cvtColor(cv2.imread(img_path), cv2.COLOR_BGR2RGB)
     im1 = cv2.cvtColor(cv2.imread(img_path), cv2.COLOR_BGR2GRAY)
     im1 = cv2.resize(im1, (0, 0), fx=.5, fy=0.5)
     t = np.array([[1, 0, -0.2],
@@ -107,26 +110,44 @@ def compareLK(img_path):
                 ptspyr = np.append(ptspyr, i)
     ptspyr = ptspyr.reshape(int(ptspyr.shape[0] / 2), 2)
     uvpyr = uvpyr.reshape(int(uvpyr.shape[0] / 2), 2)
+    if len(im2.shape)==2:
+        f, ax = plt.subplots(1,3)
+        ax[0].set_title('reg LK')
+        ax[0].imshow(im2, cmap="gray")
+        ax[0].quiver(pts[:, 0], pts[:, 1], uv[:, 0], uv[:, 1], color='r')
+        ax[1].set_title('Pyr LK')
+        ax[1].imshow(im2, cmap="gray")
+        ax[1].quiver(ptspyr[:, 0], ptspyr[:, 1], uvpyr[:, 0], uvpyr[:, 1], color='r')
+        ax[2].set_title('overlap')
+        ax[2].imshow(im2, cmap="gray")
+        ax[2].quiver(pts[:, 0], pts[:, 1], uv[:, 0], uv[:, 1], color='r')
+        ax[2].quiver(ptspyr[:, 0], ptspyr[:, 1], uvpyr[:, 0], uvpyr[:, 1], color='y')
+        plt.show()
 
-    f, ax = plt.subplots(1,3)
-    ax[0].set_title('reg LK')
-    ax[0].imshow(im2, cmap='gray')
-    ax[0].quiver(pts[:, 0], pts[:, 1], uv[:, 0], uv[:, 1], color='r')
-    ax[1].set_title('Pyr LK')
-    ax[1].imshow(im2, cmap='gray')
-    ax[1].quiver(ptspyr[:, 0], ptspyr[:, 1], uvpyr[:, 0], uvpyr[:, 1], color='r')
-    ax[2].set_title('overlap')
-    ax[2].imshow(im2, cmap='gray')
-    ax[2].quiver(pts[:, 0], pts[:, 1], uv[:, 0], uv[:, 1], color='r')
-    ax[2].quiver(ptspyr[:, 0], ptspyr[:, 1], uvpyr[:, 0], uvpyr[:, 1], color='g')
-    plt.show()
+    else:
+        f, ax = plt.subplots(1, 3)
+        ax[0].set_title('reg LK')
+        ax[0].imshow(im2)
+        ax[0].quiver(pts[:, 0], pts[:, 1], uv[:, 0], uv[:, 1], color='r')
+        ax[1].set_title('Pyr LK')
+        ax[1].imshow(im2)
+        ax[1].quiver(ptspyr[:, 0], ptspyr[:, 1], uvpyr[:, 0], uvpyr[:, 1], color='r')
+        ax[2].set_title('overlap')
+        ax[2].imshow(im2)
+        ax[2].quiver(pts[:, 0], pts[:, 1], uv[:, 0], uv[:, 1], color='r')
+        ax[2].quiver(ptspyr[:, 0], ptspyr[:, 1], uvpyr[:, 0], uvpyr[:, 1], color='y')
+        plt.show()
 
 
 def displayOpticalFlow(img: np.ndarray, pts: np.ndarray, uvs: np.ndarray):
-    plt.imshow(img, cmap='gray')
-    plt.quiver(pts[:, 0], pts[:, 1], uvs[:, 0], uvs[:, 1], color='r')
-
-    plt.show()
+    if len(img.shape)==2:
+        plt.imshow(img, cmap='gray')
+        plt.quiver(pts[:, 0], pts[:, 1], uvs[:, 0], uvs[:, 1], color='r')
+        plt.show()
+    else:
+        plt.imshow(img)
+        plt.quiver(pts[:, 0], pts[:, 1], uvs[:, 0], uvs[:, 1], color='r')
+        plt.show()
 
 
 # ---------------------------------------------------------------------------
@@ -142,13 +163,13 @@ def translationlkdemo(img_path):
     t = np.array([[1, 0, -.2],
                   [0, 1, -.4],
                   [0, 0, 1]], dtype=np.float)
-    img_2 = cv2.warpPerspective(img_1, t, img_1.shape[::-1])
+    img_2 = cv2.warpPerspective(img_1, t,  (img_1.shape[1],img_1.shape[0]))
     st = time.time()
     mat=findTranslationLK(img_1, img_2)
     et = time.time()
     print("Time: {:.4f}".format(et - st))
     print("mat\n",mat ,"\nt\n", t)
-    new = cv2.warpPerspective(img_1, mat, img_1.shape[::-1])
+    new = cv2.warpPerspective(img_1, mat, (img_1.shape[1],img_1.shape[0]))
     f, ax = plt.subplots(1, 3)
     ax[0].set_title('img2 given transformation')
     ax[0].imshow(img_2, cmap='gray')
@@ -158,7 +179,7 @@ def translationlkdemo(img_path):
 
     ax[2].set_title('diff')
     ax[2].imshow(img_2 - new, cmap='gray')
-
+    print("mse= ", MSE(new, img_2))
     plt.show()
 
 
@@ -394,10 +415,10 @@ def main():
     img_path = 'input/boxMan.jpg'
 
 
-    lkDemo(img_path)
-    hierarchicalkDemo(img_path)
-    compareLK(img_path)
-    # translationlkdemo(img_path)
+    # lkDemo(img_path)
+    # hierarchicalkDemo(img_path)
+    # compareLK(img_path)
+    translationlkdemo(img_path)
     # translationcorrdemo(img_path)
     # rigidcorrdemo(img_path)
     # imageWarpingDemo(img_path)
