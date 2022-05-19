@@ -423,9 +423,14 @@ def findRigidCorr(im1: np.ndarray, im2: np.ndarray) -> np.ndarray:
         else:
             theta = 0
         # create a new img with the found transformation
-        t = np.array([[np.cos(theta), -np.sin(theta), 0],
-                      [np.sin(theta), np.cos(theta), 0],
+        # t = np.array([[np.cos(theta), -np.sin(theta), 0],
+        #               [np.sin(theta), np.cos(theta), 0],
+        #               [0, 0, 1]], dtype=np.float)
+
+        t = np.array([[np.cos(theta), -np.sin(theta), x],
+                      [np.sin(theta), np.cos(theta), y],
                       [0, 0, 1]], dtype=np.float)
+
         newimg = cv2.warpPerspective(im1, t, im1.shape[::-1])
         # find the difference between new and im2 if smaller than diff update diff and spot
         d = ((im2 - newimg) ** 2).sum()
@@ -443,14 +448,14 @@ def findRigidCorr(im1: np.ndarray, im2: np.ndarray) -> np.ndarray:
         theta = np.arctan(y / x)
     else:
         theta = 0
-    t = np.array([[np.cos(theta), -np.sin(theta), 0],
-                  [np.sin(theta), np.cos(theta), 0],
+    t = np.array([[np.cos(theta), -np.sin(theta), x],
+                  [np.sin(theta), np.cos(theta), y],
                   [0, 0, 1]], dtype=np.float)
 
-    newimg = cv2.warpPerspective(im1, t, im1.shape[::-1])
-    mat=findTranslationCorr(newimg, im2)
-    T=t@mat
-    return (T)
+    # newimg = cv2.warpPerspective(im1, t, im1.shape[::-1])
+    # mat=findTranslationCorr(newimg, im2)
+    # T=t@mat
+    return t
 
 
 def warpImages(im1: np.ndarray, im2: np.ndarray, T: np.ndarray) -> np.ndarray:
