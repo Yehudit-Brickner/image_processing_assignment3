@@ -158,6 +158,7 @@ def displayOpticalFlow(img: np.ndarray, pts: np.ndarray, uvs: np.ndarray):
 
 
 def translationlkdemo(img_path):
+    img_1 = cv2.cvtColor(cv2.imread(img_path), cv2.COLOR_BGR2RGB)
     img_1 = cv2.cvtColor(cv2.imread(img_path), cv2.COLOR_BGR2GRAY)
     img_1 = cv2.resize(img_1, (0, 0), fx=.5, fy=0.5)
     t = np.array([[1, 0, -.2],
@@ -179,17 +180,17 @@ def translationlkdemo(img_path):
 
     ax[2].set_title('diff')
     ax[2].imshow(img_2 - new, cmap='gray')
-    print("mse= ", MSE(new, img_2))
-    plt.show()
 
+    plt.show()
+    print("mse= ", MSE(new, img_2))
 
 def rigidlkdemo(img_path):
     img_1 = cv2.cvtColor(cv2.imread(img_path), cv2.COLOR_BGR2RGB)
-    # img_1 = cv2.cvtColor(cv2.imread(img_path), cv2.COLOR_BGR2GRAY)
-    t1 = np.array([[1, 0, 2],
-                  [0, 1, -5],
+    img_1 = cv2.cvtColor(cv2.imread(img_path), cv2.COLOR_BGR2GRAY)
+    t1 = np.array([[1, 0, -.7],
+                  [0, 1, 0.4],
                   [0, 0, 1]], dtype=np.float)
-    theta=0.5
+    theta=0.05
     t2=np.array([[np.cos(theta),-np.sin(theta),0],
                  [np.sin(theta),np.cos(theta),0],
                  [0,0,1]],dtype=np.float)
@@ -230,19 +231,20 @@ def rigidlkdemo(img_path):
     print("mse= ", MSE(new, img_2))
 
 def translationcorrdemo(img_path):
+
     img_1 = cv2.cvtColor(cv2.imread(img_path), cv2.COLOR_BGR2GRAY)
     img_1 = cv2.resize(img_1, (0, 0), fx=.5, fy=0.5)
     t = np.array([[1, 0, -2],
                   [0, 1, 2],
                   [0, 0, 1]], dtype=np.float)
-    img_2 = cv2.warpPerspective(img_1, t, img_1.shape[::-1])
+    img_2 = cv2.warpPerspective(img_1, t, (img_1.shape[1],img_1.shape[0]))
     st = time.time()
     mat =findTranslationCorr(img_1.astype(np.float),img_2.astype(np.float))
     et = time.time()
 
     print("Time: {:.4f}".format(et - st))
     print("mat\n", mat, "\nt\n", t)
-    new = cv2.warpPerspective(img_1, mat, img_1.shape[::-1])
+    new = cv2.warpPerspective(img_1, mat, (img_1.shape[1],img_1.shape[0]))
     f, ax = plt.subplots(1, 3)
     ax[0].set_title('img2 given transformation')
     ax[0].imshow(img_2, cmap='gray')
@@ -254,13 +256,13 @@ def translationcorrdemo(img_path):
     ax[2].imshow(img_2-new, cmap='gray')
 
     plt.show()
-
+    print("mse= ", MSE(new, img_2))
 
 def rigidcorrdemo(img_path):
     img_1 = cv2.cvtColor(cv2.imread(img_path), cv2.COLOR_BGR2GRAY)
     img_1 = cv2.resize(img_1, (0, 0), fx=.5, fy=0.5)
-    t1 = np.array([[1, 0, 2],
-                  [0, 1, -2],
+    t1 = np.array([[1, 0, 5],
+                  [0, 1, -7],
                   [0, 0, 1]], dtype=np.float)
     theta=0.05
     t2 = np.array([[np.cos(theta), -np.sin(theta), 0],
@@ -426,15 +428,19 @@ def blendDemo():
 def main():
     print("ID:", myID())
 
-    img_path = 'input/boxMan.jpg'
+    paths=['input/boxMan.jpg','input/color1.jpg','input/start1.jpg','input/moon.jpg']
 
+    img_path = 'input/color1.jpg'
+    # for x in paths:
+    #     print(x)
+    #     rigidlkdemo(x)
 
     # lkDemo(img_path)
     # hierarchicalkDemo(img_path)
     # compareLK(img_path)
     # translationlkdemo(img_path)
     # translationcorrdemo(img_path)
-    # rigidcorrdemo(img_path)
+    rigidcorrdemo(img_path)
     # imageWarpingDemo(img_path)
     # rigidlkdemo(img_path)
 
@@ -452,7 +458,7 @@ def main():
 
     # pyrGaussianDemo('input/pyr_bit.jpg')
     # pyrLaplacianDemo('input/pyr_bit.jpg')
-    blendDemo()
+    # blendDemo()
 
 
 

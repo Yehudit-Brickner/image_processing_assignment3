@@ -1,6 +1,7 @@
 import sys
 from typing import List
 
+import numpy
 import numpy as np
 import cv2
 from numpy.linalg import LinAlgError
@@ -185,43 +186,85 @@ def findRigidLK(im1: np.ndarray, im2: np.ndarray) -> np.ndarray:
     :return: Rigid matrix by LK.
     """
 
+    # old, new = opticalFlow(im1, im2, 10, 5)
+    # diff= float("inf")
+    # # look at all the u,v we found
+    # for n in range(new.shape[0]):
+    #     x =  new[n][0]
+    #     y = new[n][1]
+    #     # find angel between the points
+    #     if(x!=0):
+    #         theta= np.arctan(y / x)
+    #     else:
+    #         theta =0
+    #     #create a new image a transformation using u,v and theta
+    #     t = np.array([[np.cos(theta), -np.sin(theta), x],
+    #                    [np.sin(theta), np.cos(theta), y],
+    #                    [0, 0, 1]], dtype=np.float)
+    #
+    #     newpic= cv2.warpPerspective(im1, t,(im1.shape[1], im1.shape[0]))
+    #     # find difference in image and keep track of the x,y, theta that gives the smallest diff
+    #     d = ((im2 - newpic) ** 2).sum()
+    #     if d<diff:
+    #         diff=d
+    #         spot=n
+    #     if diff==0:
+    #         break
+    #
+    # x = new[spot][0]
+    # y = new[spot][1]
+    #
+    # if x!=0:
+    #     theta = np.arctan(y/x)
+    # else:
+    #     theta=0
+    # t = np.array([[np.cos(theta), -np.sin(theta), x],
+    #               [np.sin(theta), np.cos(theta), y],
+    #               [0, 0, 1]], dtype=np.float)
+    #
+    # return (t)
+
     old, new = opticalFlow(im1, im2, 10, 5)
-    diff= float("inf")
+    diff = float("inf")
+    spot = 0
     # look at all the u,v we found
     for n in range(new.shape[0]):
-        x =  new[n][0]
+        x = new[n][0]
         y = new[n][1]
         # find angel between the points
-        if(x!=0):
-            theta= np.arctan(y / x)
+        if x != 0:
+            theta = np.arctan(y / x)
         else:
-            theta =0
-        # create a new image a transformation using u,v and theta
-        t = np.array([[np.cos(theta), -np.sin(theta), x],
-                       [np.sin(theta), np.cos(theta), y],
-                       [0, 0, 1]], dtype=np.float)
-        newpic= cv2.warpPerspective(im1, t,(im1.shape[1], im1.shape[0]))
-        # find difference in image and keep track of the x,y, theta that gives the smallest diff
+            theta = 0
+        # create a new image a transformation using theta
+        t = np.array([[np.cos(theta), -np.sin(theta), 0],
+                      [np.sin(theta), np.cos(theta), 0],
+                      [0, 0, 1]], dtype=np.float)
+
+        newpic = cv2.warpPerspective(im1, t, (im1.shape[1], im1.shape[0]))
+        # find difference in image and keep track of the theta that gives the smallest diff
         d = ((im2 - newpic) ** 2).sum()
-        if d<diff:
-            diff=d
-            spot=n
-        if diff==0:
+        if d < diff:
+            diff = d
+            spot = n
+        if diff == 0:
             break
 
+    # with the theta that gave us the smallest difference we will use findtranslationLK to find the uv
     x = new[spot][0]
     y = new[spot][1]
-
-    if x!=0:
-        theta = np.arctan(y/x)
+    if x != 0:
+        theta = np.arctan(y / x)
     else:
-        theta=0
-    t = np.array([[np.cos(theta), -np.sin(theta), x],
-                  [np.sin(theta), np.cos(theta), y],
+        theta = 0
+    t = np.array([[np.cos(theta), -np.sin(theta), 0],
+                  [np.sin(theta), np.cos(theta), 0],
                   [0, 0, 1]], dtype=np.float)
+    newpic = cv2.warpPerspective(im1, t, (im1.shape[1], im1.shape[0]))
 
-    return (t)
-
+    mat =findTranslationLK(newpic,im2)
+    T = mat@t
+    return (T)
 
 
 def findTranslationCorr(im1: np.ndarray, im2: np.ndarray) -> np.ndarray:
@@ -288,7 +331,7 @@ def findTranslationCorr(im1: np.ndarray, im2: np.ndarray) -> np.ndarray:
 
         t1 = corr_listt[x][1][0] - corr_listt[x][0][1] # u
         t2 = corr_listt[x][1][1] - corr_listt[x][0][2] # v
-    # create a new img with the found transformation
+        # create a new img with the found transformation
         t = np.array([[1, 0, t1],
                       [0, 1, t2],
                       [0, 0, 1]], dtype=np.float)
@@ -315,7 +358,9 @@ def findRigidCorr(im1: np.ndarray, im2: np.ndarray) -> np.ndarray:
     :param im2: image 1 after Rigid.
     :return: Rigid matrix by correlation.
     """
-    win = 5
+    #
+
+    win = 13
     pad = win // 2
 
     im2pad = cv2.copyMakeBorder(im2, pad, pad, pad, pad, cv2.BORDER_REPLICATE, None, value=0)
@@ -365,46 +410,47 @@ def findRigidCorr(im1: np.ndarray, im2: np.ndarray) -> np.ndarray:
                 for m in range(len(big)):
                     corr_listt.append((big[m], (I[x], J[y])))
 
-    spot=-1
-    diff=float("inf")
-    # go through all values in the cor_list and find the u v and theta
+    spot = -1
+    diff = float("inf")
+    # go through all values in the corr_list and find the theta
     # by finding the difference between im1 xy and im2 xy
     for n in range(len(corr_listt)):
-        x =  corr_listt[n][1][0] - corr_listt[n][0][1]
+        x = corr_listt[n][1][0] - corr_listt[n][0][1]
         y = corr_listt[n][1][1] - corr_listt[n][0][2]
 
-        if(y!=0):
-            theta= np.arctan(x/ y)
+        if (x != 0):
+            theta = np.arctan(y / x)
         else:
-            theta =0
+            theta = 0
         # create a new img with the found transformation
-        t = np.array([[np.cos(theta), -np.sin(theta), x],
-                       [np.sin(theta), np.cos(theta), y],
-                       [0, 0, 1]], dtype=np.float)
-        new= cv2.warpPerspective(im1, t,im1.shape[::-1])
+        t = np.array([[np.cos(theta), -np.sin(theta), 0],
+                      [np.sin(theta), np.cos(theta), 0],
+                      [0, 0, 1]], dtype=np.float)
+        newimg = cv2.warpPerspective(im1, t, im1.shape[::-1])
         # find the difference between new and im2 if smaller than diff update diff and spot
-        d = ((im2 - new) ** 2).sum()
-        if d<diff:
-            diff=d
-            spot=n
-        if diff==0:
+        d = ((im2 - newimg) ** 2).sum()
+        if d < diff:
+            diff = d
+            spot = n
+        if diff == 0:
             break
+
     # take the values from corrlist that has the smallest diff and return the transformation
     x = corr_listt[spot][1][0] - corr_listt[spot][0][1]
     y = corr_listt[spot][1][1] - corr_listt[spot][0][2]
 
-    if y!=0:
-        theta = np.arctan(x /y)
+    if x != 0:
+        theta = np.arctan(y / x)
     else:
-        theta=0
-    t = np.array([[np.cos(theta), -np.sin(theta), x],
-                  [np.sin(theta), np.cos(theta), y],
+        theta = 0
+    t = np.array([[np.cos(theta), -np.sin(theta), 0],
+                  [np.sin(theta), np.cos(theta), 0],
                   [0, 0, 1]], dtype=np.float)
 
-    return (t)
-
-
-
+    newimg = cv2.warpPerspective(im1, t, im1.shape[::-1])
+    mat=findTranslationCorr(newimg, im2)
+    T=t@mat
+    return (T)
 
 
 def warpImages(im1: np.ndarray, im2: np.ndarray, T: np.ndarray) -> np.ndarray:
@@ -691,16 +737,17 @@ def pyrBlend(img_1: np.ndarray, img_2: np.ndarray,mask: np.ndarray, levels: int)
     :return: (Naive blend, Blended Image)
     """
 
-
+    #create the laplaceian pyramid of img1 and img2 and a guassianish pyramid of the mask
     l1=laplaceianReduce(img_1,levels)
     l2=laplaceianReduce(img_2,levels)
     l5=pyrmask(mask,levels)
     l4 = []
-
+    # create a pyramid of the images combines
     for i in range(levels+1):
         l4.append((l5[i])*l1[i]+(1-l5[i])*l2[i])
-
+    # expand the pyramid and normalize
     blended1=NormalizeData(laplaceianExpand(l4))
+    # naive blend normalized
     naiveblend=NormalizeData(mask*img_1+(1-mask)*img_2)
     return naiveblend, blended1
 
