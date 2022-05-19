@@ -85,7 +85,6 @@ def opticalFlow(im1: np.ndarray, im2: np.ndarray, step_size=10, win_size=5) -> (
 
 
 
-
 def opticalFlowPyrLK(img1: np.ndarray, img2: np.ndarray, k: int, stepSize: int, winSize: int) -> np.ndarray:
     """
     :param img1: First image
@@ -461,13 +460,19 @@ def gaussianPyr(img: np.ndarray, levels: int = 4) -> List[np.ndarray]:
     :param levels: Pyramid depth
     :return: Gaussian pyramid (list of images)
     """
+
+    plist = []
+    # get a gaussian kernel 5x1
+    k = cv2.getGaussianKernel(5, -1)
+    # make it a square 5x5
+    ker = k.dot(k.T)
+    imgc = img.copy()
+
     # black and white img
     if(len(img.shape)==2):
-        # print("black and white")
-        plist = []
-        k = cv2.getGaussianKernel(5, -1)
-        ker = (k).dot(k.T)
-        imgc = img.copy()
+        # for the amount of levels in the pyramid
+        # add imgc to the pyramid, blur imgc
+        # make an image half the size using the pixels from the blurred image
         for i in range(levels):
             plist.append(imgc)
             imgblur = cv2.filter2D(imgc, -1, ker, borderType=cv2.BORDER_REFLECT_101)
@@ -482,11 +487,10 @@ def gaussianPyr(img: np.ndarray, levels: int = 4) -> List[np.ndarray]:
 
     # color image
     else:
-        # print("color_img")
-        plist = []
-        k = cv2.getGaussianKernel(5, -1)
-        ker = (k).dot(k.T)
-        imgc = img.copy()
+
+        # for the amount of levels in the pyramid
+        # add imgc to the pyramid, blur imgc
+        # make an image half the size using the pixels from the blurred image
         for i in range(levels):
             plist.append(imgc)
             imgblur = cv2.filter2D(imgc, -1, ker, borderType=cv2.BORDER_REFLECT_101)
@@ -510,12 +514,19 @@ def laplaceianReduce(img: np.ndarray, levels: int = 4) -> List[np.ndarray]:
     """
 
     plist = []
+    # get a gaussian kernel 5x1
     k = cv2.getGaussianKernel(5, -1)
+    # make it a square 5x5
     ker = (k).dot(k.T)
     imgc = img.copy()
+
     # black and white image
     if len(img.shape)==2:
-        # print("black and white")
+        # for the amount of levels in the pyramid
+        # blur imgc, make the laplican of the mage by taking imgc-blur
+        # add imgc-blur to the list
+        # make an image half the size using the pixels from the blurred image
+        # and at the last level also add the last blurred image
         for i in range(levels):
             imgblur = cv2.filter2D(imgc, -1, ker, borderType=cv2.BORDER_REFLECT_101)
             imglap = (imgc - imgblur)
@@ -534,7 +545,11 @@ def laplaceianReduce(img: np.ndarray, levels: int = 4) -> List[np.ndarray]:
 
     # color image
     else:
-        # print("color_img")
+        # for the amount of levels in the pyramid
+        # blur imgc, make the laplican of the mage by taking imgc-blur
+        # add imgc-blur to the list
+        # make an image half the size using the pixels from the blurred image
+        # and at the last level also add the last blurred image
         for i in range(levels):
             imgblur= cv2.filter2D(imgc, -1, ker, borderType=cv2.BORDER_REFLECT_101)
             imglap=(imgc-imgblur)
@@ -552,19 +567,28 @@ def laplaceianReduce(img: np.ndarray, levels: int = 4) -> List[np.ndarray]:
         return plist
 
 
-
 def laplaceianExpand(lap_pyr: List[np.ndarray]) -> np.ndarray:
     """
     Restores the original image from a laplacian pyramid
     :param lap_pyr: Laplacian Pyramid
     :return: Original image
     """
+    # get a gaussian kernel 5x1
     k = cv2.getGaussianKernel(5, -1)
+    # make it a square 5x5 and times it by 4 so that the sum of the kernel is 4
     ker = (k).dot(k.T)
     ker = ker * 4
+    # stat with the smallest img that is not the laplacian but blurred
     imgn = lap_pyr[-1]
+
+    # black and white
     if (len(lap_pyr[-1].shape) == 2):
         # print("black and white")
+        # for the amount of levels in the lap pyramid
+        # add the laplacin to the img
+        # create a new img that is the size of the layer below in the pyramid(2x bigger)
+        # put in the the pixels from the smaller img into the bigger image
+        # unblur the big img
         for i in range(len(lap_pyr)-2,0,-1):
             imgn=imgn+lap_pyr[i]
             newr = lap_pyr[i - 1].shape[0]
@@ -585,8 +609,14 @@ def laplaceianExpand(lap_pyr: List[np.ndarray]) -> np.ndarray:
         imgn = imgn + lap_pyr[0]
         return imgn
 
+    # color img
     else:
-        # print("color img")
+        # print("black and white")
+        # for the amount of levels in the lap pyramid
+        # add the laplacin to the img
+        # create a new img that is the size of the layer below in the pyramid(2x bigger)
+        # put in the the pixels from the smaller img into the bigger image
+        # unblur the big img
         for i in range(len(lap_pyr) - 2, 0, -1):
             imgn = imgn + lap_pyr[i]
             newr=lap_pyr[i - 1].shape[0]
@@ -609,6 +639,9 @@ def laplaceianExpand(lap_pyr: List[np.ndarray]) -> np.ndarray:
 
 
 def pyrmask(mask: np.ndarray, levels: int) -> np.ndarray:
+
+    # same as gaussian pyramid but at the adding an extra pic of the smallest layer
+    # kinda like the lap pyramid
     plist = []
     k = cv2.getGaussianKernel(5, -1)
     ker = (k).dot(k.T)
@@ -648,7 +681,6 @@ def pyrmask(mask: np.ndarray, levels: int) -> np.ndarray:
         return plist
 
 
-
 def pyrBlend(img_1: np.ndarray, img_2: np.ndarray,mask: np.ndarray, levels: int) -> (np.ndarray, np.ndarray):
     """
     Blends two images using PyramidBlend method
@@ -659,18 +691,16 @@ def pyrBlend(img_1: np.ndarray, img_2: np.ndarray,mask: np.ndarray, levels: int)
     :return: (Naive blend, Blended Image)
     """
 
-    k = cv2.getGaussianKernel(5, -1)
-    ker = (k).dot(k.T)
+
     l1=laplaceianReduce(img_1,levels)
     l2=laplaceianReduce(img_2,levels)
-    # l3=laplaceianReduce(mask,levels)
     l5=pyrmask(mask,levels)
     l4 = []
 
     for i in range(levels+1):
         l4.append((l5[i])*l1[i]+(1-l5[i])*l2[i])
+
     blended1=NormalizeData(laplaceianExpand(l4))
     naiveblend=NormalizeData(mask*img_1+(1-mask)*img_2)
-    # naiveblend=cv2.filter2D(naiveblend, -1, ker, borderType=cv2.BORDER_REFLECT_101)
     return naiveblend, blended1
 

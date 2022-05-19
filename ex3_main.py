@@ -452,7 +452,7 @@ def main():
 
     # pyrGaussianDemo('input/pyr_bit.jpg')
     # pyrLaplacianDemo('input/pyr_bit.jpg')
-    # blendDemo()
+    blendDemo()
 
 
 
