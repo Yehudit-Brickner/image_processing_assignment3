@@ -470,7 +470,6 @@ def warpImages(im1: np.ndarray, im2: np.ndarray, T: np.ndarray) -> np.ndarray:
 
     new=np.zeros((im1.shape[0],im1.shape[1]))
     Tinv = np.linalg.inv(T)
-    print(T, "\n",Tinv)
     for i in range(im2.shape[0]):
         for j in range(im2.shape[1]):
             arr= np.array([i,j,1])
