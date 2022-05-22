@@ -173,6 +173,7 @@ def translationlkdemo(img_path):
     print("Time: {:.4f}".format(et - st))
     print("mat\n",mat ,"\nt\n", t)
     new = cv2.warpPerspective(img_1, mat, (img_1.shape[1],img_1.shape[0]))
+    cv2.imwrite('input/imTransB1.jpg',new)
     f, ax = plt.subplots(1, 3)
     ax[0].set_title('img2 given transformation')
     ax[0].imshow(img_2, cmap='gray')
@@ -200,6 +201,7 @@ def rigidlkdemo(img_path):
 
     t=t1@t2
     img_2 = cv2.warpPerspective(img_1, t, (img_1.shape[1], img_1.shape[0]))
+    cv2.imwrite('input/imRigidB1.jpg', img_2)
     st = time.time()
     mat = findRigidLK(img_1, img_2)
     et = time.time()
@@ -248,6 +250,7 @@ def translationcorrdemo(img_path):
     print("Time: {:.4f}".format(et - st))
     print("mat\n", mat, "\nt\n", t)
     new = cv2.warpPerspective(img_1, mat, (img_1.shape[1],img_1.shape[0]))
+    cv2.imwrite('input/imTransB2.jpg', new)
     f, ax = plt.subplots(1, 3)
     ax[0].set_title('img2 given transformation')
     ax[0].imshow(img_2, cmap='gray')
@@ -281,6 +284,7 @@ def rigidcorrdemo(img_path):
     print("Time: {:.4f}".format(et - st))
     print("mat\n", mat, "\nt\n", t)
     new = cv2.warpPerspective(img_1, mat, img_1.shape[::-1])
+    cv2.imwrite('input/imRigidB2.jpg', new)
     f, ax = plt.subplots(1, 3)
     ax[0].set_title('img2 given transformation')
     ax[0].imshow(img_2, cmap='gray')
@@ -396,7 +400,7 @@ def blendDemo():
 
     plt.show()
 
-    # cv2.imwrite('sunset_cat.png', cv2.cvtColor((im_blend * 255).astype(np.uint8), cv2.COLOR_RGB2BGR))
+    cv2.imwrite('output/sunset_cat.png', cv2.cvtColor((im_blend * 255).astype(np.uint8), cv2.COLOR_RGB2BGR))
 
 
 def main():
@@ -404,7 +408,7 @@ def main():
 
 
 
-    img_path = 'input/boxMan.jpg'
+    # img_path = 'input/boxMan.jpg'
 
 
     # lkDemo(img_path)
@@ -413,15 +417,15 @@ def main():
 
 
 
-    img_path = 'input/imTransA1.jpg'
-    translationlkdemo(img_path)
-    img_path = 'input/imRigidA1.jpg'
-    rigidlkdemo(img_path)
-
-    img_path = 'input/imTransB1.jpg'
-    translationcorrdemo(img_path)
-    img_path = 'input/imRigidB1.jpg'
-    rigidcorrdemo(img_path)
+    # img_path = 'input/imTransA1.jpg'
+    # translationlkdemo(img_path)
+    # img_path = 'input/imRigidA1.jpg'
+    # rigidlkdemo(img_path)
+    #
+    # img_path = 'input/imTransA2.jpg'
+    # translationcorrdemo(img_path)
+    # img_path = 'input/imRigidA2.jpg'
+    # rigidcorrdemo(img_path)
 
     # imageWarpingDemo(img_path)
 
@@ -438,9 +442,9 @@ def main():
     # cv2.imwrite("Input/color.jpg", img_2)
 
 
-    # pyrGaussianDemo('input/pyr_bit.jpg')
-    # pyrLaplacianDemo('input/pyr_bit.jpg')
-    # blendDemo()
+    pyrGaussianDemo('input/pyr_bit.jpg')
+    pyrLaplacianDemo('input/pyr_bit.jpg')
+    blendDemo()
 
 
 
