@@ -50,8 +50,10 @@ def hierarchicalkDemo(img_path):
                   [0, 1, -.1],
                   [0, 0, 1]], dtype=np.float)
     im2 = cv2.warpPerspective(im1, t, (im1.shape[1], im1.shape[0]))
-
+    st = time.time()
     ans = opticalFlowPyrLK(im1.astype(np.float), im2.astype(np.float), 4, 20, 5)
+    et = time.time()
+    print("Time: {:.4f}".format(et - st))
 
     pts = np.array([])
     uv = np.array([])
@@ -68,12 +70,6 @@ def hierarchicalkDemo(img_path):
     print(np.mean(uv, 0))
     displayOpticalFlow(im2, pts, uv)
 
-    # problem with code
-    # lk_params = dict(winSize=(15, 15),
-    #                  maxLevel=2,
-    #                  criteria=(cv2.TERM_CRITERIA_EPS | cv2.TERM_CRITERIA_COUNT,
-    #                            10, 0.03))
-    # p1, st, err=cv2.calcOpticalFlowPyrLK(np.float32(im1), np.float32(im2), pts,None, **lk_params)
 
 
 def compareLK(img_path):
@@ -167,13 +163,14 @@ def translationlkdemo(img_path):
                   [0, 1, .4],
                   [0, 0, 1]], dtype=np.float)
     img_2 = cv2.warpPerspective(img_1, t,  (img_1.shape[1],img_1.shape[0]))
+    cv2.imwrite('input/imTransB1.jpg', img_2)
     st = time.time()
     mat=findTranslationLK(img_1, img_2)
     et = time.time()
     print("Time: {:.4f}".format(et - st))
-    print("mat\n",mat ,"\nt\n", t)
+    # print("mat\n",mat ,"\nt\n", t)
+
     new = cv2.warpPerspective(img_1, mat, (img_1.shape[1],img_1.shape[0]))
-    cv2.imwrite('input/imTransB1.jpg',new)
     f, ax = plt.subplots(1, 3)
     ax[0].set_title('img2 given transformation')
     ax[0].imshow(img_2, cmap='gray')
@@ -202,11 +199,12 @@ def rigidlkdemo(img_path):
     t=t1@t2
     img_2 = cv2.warpPerspective(img_1, t, (img_1.shape[1], img_1.shape[0]))
     cv2.imwrite('input/imRigidB1.jpg', img_2)
+
     st = time.time()
     mat = findRigidLK(img_1, img_2)
     et = time.time()
     print("Time: {:.4f}".format(et - st))
-    print("mat\n", mat, "\nt\n", t)
+    # print("mat\n", mat, "\nt\n", t)
 
     new = cv2.warpPerspective(img_1, mat, (img_1.shape[1], img_1.shape[0]))
     if len (img_2.shape)==2:
@@ -243,14 +241,16 @@ def translationcorrdemo(img_path):
                   [0, 1, 7],
                   [0, 0, 1]], dtype=np.float)
     img_2 = cv2.warpPerspective(img_1, t, (img_1.shape[1],img_1.shape[0]))
+    cv2.imwrite('input/imTransB2.jpg', img_2)
+
     st = time.time()
     mat =findTranslationCorr(img_1.astype(np.float),img_2.astype(np.float))
     et = time.time()
-
     print("Time: {:.4f}".format(et - st))
-    print("mat\n", mat, "\nt\n", t)
+    # print("mat\n", mat, "\nt\n", t)
+
     new = cv2.warpPerspective(img_1, mat, (img_1.shape[1],img_1.shape[0]))
-    cv2.imwrite('input/imTransB2.jpg', new)
+
     f, ax = plt.subplots(1, 3)
     ax[0].set_title('img2 given transformation')
     ax[0].imshow(img_2, cmap='gray')
@@ -268,23 +268,22 @@ def rigidcorrdemo(img_path):
     print("rigid corr demo")
     img_1 = cv2.cvtColor(cv2.imread(img_path), cv2.COLOR_BGR2GRAY)
     img_1 = cv2.resize(img_1, (0, 0), fx=.5, fy=0.5)
-    # t1 = np.array([[1, 0, 0],
-    #               [0, 1, 0],
-    #               [0, 0, 1]], dtype=np.float)
+
     theta=0.1
     t = np.array([[np.cos(theta), -np.sin(theta),-10],
                    [np.sin(theta), np.cos(theta), -1],
                    [0, 0, 1]], dtype=np.float)
-    # t=t1@t2
+
     img_2 = cv2.warpPerspective(img_1, t, img_1.shape[::-1])
+    cv2.imwrite('input/imRigidB2.jpg', img_2)
     st = time.time()
     mat = findRigidCorr(img_1.astype(np.float), img_2.astype(np.float))
     et = time.time()
-
     print("Time: {:.4f}".format(et - st))
-    print("mat\n", mat, "\nt\n", t)
+
+    # print("mat\n", mat, "\nt\n", t)
     new = cv2.warpPerspective(img_1, mat, img_1.shape[::-1])
-    cv2.imwrite('input/imRigidB2.jpg', new)
+
     f, ax = plt.subplots(1, 3)
     ax[0].set_title('img2 given transformation')
     ax[0].imshow(img_2, cmap='gray')
@@ -308,19 +307,18 @@ def imageWarpingDemo(img_path):
 
     img_1 = cv2.cvtColor(cv2.imread(img_path), cv2.COLOR_BGR2GRAY)
     img_1 = cv2.resize(img_1, (0, 0), fx=.5, fy=0.5)
-    t = np.array([[1, 0, -0.2],
-                  [0, 1, 0.2],
-                  [0, 0, 1]], dtype=np.float)
-    theta=0
-    t2 = np.array([[np.cos(theta), -np.sin(theta), 0],
-                   [np.sin(theta), np.cos(theta), 0],
+
+    theta=0.01
+    t = np.array([[np.cos(theta), -np.sin(theta), -0.5],
+                   [np.sin(theta), np.cos(theta), 0.5],
                    [0, 0, 1]],dtype=np.float)
-    t = t @ t2
     img_2 = cv2.warpPerspective(img_1, t, img_1.shape[::-1])
+
     st = time.time()
     im2 = warpImages(img_1.astype(np.float), img_2.astype(np.float), t)
     et = time.time()
     print("Time: {:.4f}".format(et - st))
+
     f, ax = plt.subplots(1, 3)
     ax[0].set_title('my rewarp')
     ax[0].imshow(im2)
@@ -408,38 +406,28 @@ def main():
 
 
 
-    # img_path = 'input/boxMan.jpg'
+    img_path = 'input/boxMan.jpg'
 
 
-    # lkDemo(img_path)
-    # hierarchicalkDemo(img_path)
-    # compareLK(img_path)
+    lkDemo(img_path)
+    hierarchicalkDemo(img_path)
+    compareLK(img_path)
 
 
 
-    # img_path = 'input/imTransA1.jpg'
-    # translationlkdemo(img_path)
-    # img_path = 'input/imRigidA1.jpg'
-    # rigidlkdemo(img_path)
-    #
-    # img_path = 'input/imTransA2.jpg'
-    # translationcorrdemo(img_path)
-    # img_path = 'input/imRigidA2.jpg'
-    # rigidcorrdemo(img_path)
+    img_path = 'input/imTransA1.jpg'
+    translationlkdemo(img_path)
+    img_path = 'input/imRigidA1.jpg'
+    rigidlkdemo(img_path)
 
-    # imageWarpingDemo(img_path)
+    img_path = 'input/imTransA2.jpg'
+    translationcorrdemo(img_path)
+    img_path = 'input/imRigidA2.jpg'
+    rigidcorrdemo(img_path)
 
+    img_path = 'input/boxMan.jpg'
+    imageWarpingDemo(img_path)
 
-    # # make a new warped image
-    # img_path = 'input/color1.jpg'
-    # img_1 = cv2.cvtColor(cv2.imread(img_path), cv2.COLOR_BGR2GRAY)
-    # t = np.array([[1, 0, 10],
-    #               [0, 1, -5],
-    #               [0, 0, 1]], dtype=np.float)
-    # img_2 = cv2.warpPerspective(img_1, t, img_1.shape[::-1])
-    # plt.imshow(img_2)
-    # plt.show()
-    # cv2.imwrite("Input/color.jpg", img_2)
 
 
     pyrGaussianDemo('input/pyr_bit.jpg')
